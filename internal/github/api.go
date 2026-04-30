@@ -77,8 +77,9 @@ type issueNode struct {
 	ClosedAt  *time.Time    `json:"closedAt"`
 	URL       string        `json:"url"`
 	Body      string        `json:"body"`
-	Comments  struct {
-		Nodes []commentNode `json:"nodes"`
+	Comments struct {
+		TotalCount int           `json:"totalCount"`
+		Nodes      []commentNode `json:"nodes"`
 	} `json:"comments"`
 }
 
@@ -99,8 +100,9 @@ type prNode struct {
 	ClosedAt    *time.Time    `json:"closedAt"`
 	URL         string        `json:"url"`
 	Body        string        `json:"body"`
-	Comments    struct {
-		Nodes []commentNode `json:"nodes"`
+	Comments struct {
+		TotalCount int           `json:"totalCount"`
+		Nodes      []commentNode `json:"nodes"`
 	} `json:"comments"`
 }
 
@@ -123,8 +125,9 @@ type searchNode struct {
 	ClosedAt    *time.Time    `json:"closedAt"`
 	URL         string        `json:"url"`
 	Body        string        `json:"body"`
-	Comments    struct {
-		Nodes []commentNode `json:"nodes"`
+	Comments struct {
+		TotalCount int           `json:"totalCount"`
+		Nodes      []commentNode `json:"nodes"`
 	} `json:"comments"`
 }
 
@@ -134,15 +137,16 @@ type searchNode struct {
 
 func nodeToIssue(n *issueNode) *Issue {
 	issue := &Issue{
-		Number:    n.Number,
-		Title:     n.Title,
-		State:     n.State,
-		Author:    Actor{Login: n.Author.Login},
-		CreatedAt: n.CreatedAt,
-		UpdatedAt: n.UpdatedAt,
-		ClosedAt:  n.ClosedAt,
-		URL:       n.URL,
-		Body:      n.Body,
+		Number:       n.Number,
+		Title:        n.Title,
+		State:        n.State,
+		Author:       Actor{Login: n.Author.Login},
+		CreatedAt:    n.CreatedAt,
+		UpdatedAt:    n.UpdatedAt,
+		ClosedAt:     n.ClosedAt,
+		URL:          n.URL,
+		Body:         n.Body,
+		CommentCount: n.Comments.TotalCount,
 	}
 	for _, a := range n.Assignees.Nodes {
 		issue.Assignees = append(issue.Assignees, Actor{Login: a.Login})
@@ -161,19 +165,20 @@ func nodeToIssue(n *issueNode) *Issue {
 
 func nodeToPR(n *prNode) *PullRequest {
 	pr := &PullRequest{
-		Number:      n.Number,
-		Title:       n.Title,
-		State:       n.State,
-		IsDraft:     n.IsDraft,
-		Author:      Actor{Login: n.Author.Login},
-		BaseRefName: n.BaseRefName,
-		HeadRefName: n.HeadRefName,
-		CreatedAt:   n.CreatedAt,
-		UpdatedAt:   n.UpdatedAt,
-		MergedAt:    n.MergedAt,
-		ClosedAt:    n.ClosedAt,
-		URL:         n.URL,
-		Body:        n.Body,
+		Number:       n.Number,
+		Title:        n.Title,
+		State:        n.State,
+		IsDraft:      n.IsDraft,
+		Author:       Actor{Login: n.Author.Login},
+		BaseRefName:  n.BaseRefName,
+		HeadRefName:  n.HeadRefName,
+		CreatedAt:    n.CreatedAt,
+		UpdatedAt:    n.UpdatedAt,
+		MergedAt:     n.MergedAt,
+		ClosedAt:     n.ClosedAt,
+		URL:          n.URL,
+		Body:         n.Body,
+		CommentCount: n.Comments.TotalCount,
 	}
 	for _, a := range n.Assignees.Nodes {
 		pr.Assignees = append(pr.Assignees, Actor{Login: a.Login})
@@ -192,15 +197,16 @@ func nodeToPR(n *prNode) *PullRequest {
 
 func searchNodeToIssue(n *searchNode) *Issue {
 	issue := &Issue{
-		Number:    n.Number,
-		Title:     n.Title,
-		State:     n.State,
-		Author:    Actor{Login: n.Author.Login},
-		CreatedAt: n.CreatedAt,
-		UpdatedAt: n.UpdatedAt,
-		ClosedAt:  n.ClosedAt,
-		URL:       n.URL,
-		Body:      n.Body,
+		Number:       n.Number,
+		Title:        n.Title,
+		State:        n.State,
+		Author:       Actor{Login: n.Author.Login},
+		CreatedAt:    n.CreatedAt,
+		UpdatedAt:    n.UpdatedAt,
+		ClosedAt:     n.ClosedAt,
+		URL:          n.URL,
+		Body:         n.Body,
+		CommentCount: n.Comments.TotalCount,
 	}
 	for _, a := range n.Assignees.Nodes {
 		issue.Assignees = append(issue.Assignees, Actor{Login: a.Login})
@@ -219,19 +225,20 @@ func searchNodeToIssue(n *searchNode) *Issue {
 
 func searchNodeToPR(n *searchNode) *PullRequest {
 	pr := &PullRequest{
-		Number:      n.Number,
-		Title:       n.Title,
-		State:       n.State,
-		IsDraft:     n.IsDraft,
-		Author:      Actor{Login: n.Author.Login},
-		BaseRefName: n.BaseRefName,
-		HeadRefName: n.HeadRefName,
-		CreatedAt:   n.CreatedAt,
-		UpdatedAt:   n.UpdatedAt,
-		MergedAt:    n.MergedAt,
-		ClosedAt:    n.ClosedAt,
-		URL:         n.URL,
-		Body:        n.Body,
+		Number:       n.Number,
+		Title:        n.Title,
+		State:        n.State,
+		IsDraft:      n.IsDraft,
+		Author:       Actor{Login: n.Author.Login},
+		BaseRefName:  n.BaseRefName,
+		HeadRefName:  n.HeadRefName,
+		CreatedAt:    n.CreatedAt,
+		UpdatedAt:    n.UpdatedAt,
+		MergedAt:     n.MergedAt,
+		ClosedAt:     n.ClosedAt,
+		URL:          n.URL,
+		Body:         n.Body,
+		CommentCount: n.Comments.TotalCount,
 	}
 	for _, a := range n.Assignees.Nodes {
 		pr.Assignees = append(pr.Assignees, Actor{Login: a.Login})
@@ -275,7 +282,7 @@ query($owner: String!, $repo: String!, $first: Int!, $states: [IssueState!], $fi
         labels(first: 20) { nodes { name color } }
         milestone { number title }
         createdAt updatedAt closedAt url body
-        comments { nodes { id author { login } body createdAt updatedAt url } }
+        comments { totalCount }
       }
     }
   }
@@ -311,7 +318,7 @@ query($query: String!, $first: Int!, $after: String) {
         labels(first: 20) { nodes { name color } }
         milestone { number title }
         createdAt updatedAt closedAt url body
-        comments { nodes { id author { login } body createdAt updatedAt url } }
+        comments { totalCount }
       }
     }
   }
@@ -330,6 +337,7 @@ query($owner: String!, $repo: String!, $after: String) {
         milestone { number title }
         createdAt updatedAt closedAt url body
         comments(first: 100) {
+          totalCount
           nodes { id author { login } body createdAt updatedAt url }
         }
       }
@@ -560,7 +568,7 @@ query($owner: String!, $repo: String!, $first: Int!, $states: [PullRequestState!
         milestone { number title }
         baseRefName headRefName
         createdAt updatedAt mergedAt closedAt url body
-        comments { nodes { id author { login } body createdAt updatedAt url } }
+        comments { totalCount }
       }
     }
   }
@@ -598,7 +606,7 @@ query($query: String!, $first: Int!, $after: String) {
         milestone { number title }
         baseRefName headRefName
         createdAt updatedAt mergedAt closedAt url body
-        comments { nodes { id author { login } body createdAt updatedAt url } }
+        comments { totalCount }
       }
     }
   }
@@ -618,6 +626,7 @@ query($owner: String!, $repo: String!, $after: String) {
         baseRefName headRefName
         createdAt updatedAt mergedAt closedAt url body
         comments(first: 100) {
+          totalCount
           nodes { id author { login } body createdAt updatedAt url }
         }
       }

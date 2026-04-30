@@ -256,11 +256,16 @@ func printPRList(prs []*github.PullRequest) {
 			draft = " [draft]"
 		}
 		branch := fmt.Sprintf("%s → %s", pr.HeadRefName, pr.BaseRefName)
-		fmt.Fprintf(w, "#%d\t%s%s\t%s\t%s\n",
+		count := pr.CommentCount
+		if count == 0 {
+			count = len(pr.Comments) // fallback for cache files written before CommentCount was added
+		}
+		fmt.Fprintf(w, "#%d\t%s%s\t%s\t%d\t%s\n",
 			pr.Number,
 			truncate(pr.Title, 55),
 			draft,
 			branch,
+			count,
 			pr.UpdatedAt.Format("2006-01-02"),
 		)
 	}

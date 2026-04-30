@@ -245,10 +245,15 @@ func printIssueList(issues []*github.Issue) {
 	defer w.Flush()
 	for _, issue := range issues {
 		labels := labelNames(issue.Labels)
-		fmt.Fprintf(w, "#%d\t%s\t%s\t%s\n",
+		count := issue.CommentCount
+		if count == 0 {
+			count = len(issue.Comments) // fallback for cache files written before CommentCount was added
+		}
+		fmt.Fprintf(w, "#%d\t%s\t%s\t%d\t%s\n",
 			issue.Number,
 			truncate(issue.Title, 60),
 			strings.Join(labels, ", "),
+			count,
 			issue.UpdatedAt.Format("2006-01-02"),
 		)
 	}

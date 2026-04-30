@@ -14,9 +14,10 @@ type Issue struct {
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	ClosedAt  *time.Time `json:"closedAt,omitempty"`
-	URL       string     `json:"url"`
-	Body      string     `json:"body"`
-	Comments  []Comment  `json:"comments"`
+	URL          string    `json:"url"`
+	Body         string    `json:"body"`
+	CommentCount int       `json:"commentCount"`
+	Comments     []Comment `json:"comments"`
 }
 
 // PullRequest represents a GitHub pull request as stored on disk.
@@ -35,9 +36,10 @@ type PullRequest struct {
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	MergedAt    *time.Time `json:"mergedAt,omitempty"`
 	ClosedAt    *time.Time `json:"closedAt,omitempty"`
-	URL         string     `json:"url"`
-	Body        string     `json:"body"`
-	Comments    []Comment  `json:"comments"`
+	URL          string    `json:"url"`
+	Body         string    `json:"body"`
+	CommentCount int       `json:"commentCount"`
+	Comments     []Comment `json:"comments"`
 }
 
 // Comment is a single issue or PR comment.
