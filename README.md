@@ -63,6 +63,7 @@ gh-cached issue list --limit 10
 # View a single issue
 gh-cached issue view 42
 gh-cached issue view 42 --comments
+gh-cached issue view 42 --refresh   # force fetch from GitHub and update cache
 ```
 
 ### Pull Requests
@@ -87,6 +88,7 @@ gh-cached pr list --limit 10
 # View a single PR
 gh-cached pr view 10
 gh-cached pr view 10 --comments
+gh-cached pr view 10 --refresh      # force fetch from GitHub and update cache
 ```
 
 ## How caching works
@@ -95,7 +97,7 @@ gh-cached pr view 10 --comments
 |---|---|
 | `cache` | Fetches everything (all states, with comments) and writes one JSON file per issue/PR. Skips if cache is younger than `--cache-duration`. |
 | `issue list` / `pr list` | Reads all cached files and filters in-memory when cache is fresh; falls back to the GitHub API with server-side filters otherwise. |
-| `issue view` / `pr view` | Serves from the individual cached file when it is less than 60 minutes old; fetches from the API and updates the cache otherwise. |
+| `issue view` / `pr view` | Serves from the individual cached file when it is less than 60 minutes old; fetches from the API and updates the cache otherwise. `--refresh` bypasses all cache checks, fetches from the API, and updates the cache. |
 
 ## Flag reference
 
@@ -130,6 +132,7 @@ gh-cached pr view 10 --comments
 | Flag | Description |
 |---|---|
 | `-c, --comments` | Show comments |
+| `--refresh` | Force fetch from GitHub and update cache |
 
 ### `pr list`
 
@@ -151,3 +154,4 @@ gh-cached pr view 10 --comments
 | Flag | Description |
 |---|---|
 | `-c, --comments` | Show comments |
+| `--refresh` | Force fetch from GitHub and update cache |
