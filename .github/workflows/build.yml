@@ -46,3 +46,31 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
           if-no-files-found: error
+
+  release-latest:
+    name: Update latest release
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Recreate latest tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete latest --yes 2>/dev/null || true
+          gh release create latest \
+            --target ${{ github.sha }} \
+            --title "Latest" \
+            --notes "Latest build from \`main\` — commit ${{ github.sha }}" \
+            --prerelease \
+            gh-cached-darwin-amd64 \
+            gh-cached-darwin-arm64 \
+            gh-cached-linux-amd64 \
+            gh-cached-windows-amd64.exe
