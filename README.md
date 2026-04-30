@@ -20,6 +20,8 @@ Set a GitHub personal access token in your environment:
 export GH_TOKEN=ghp_...
 ```
 
+`GITHUB_TOKEN` is also supported and checked as a fallback after `GH_TOKEN`.
+
 Alternatively, if you have the [GitHub CLI](https://cli.github.com) installed and authenticated, `gh-cached` will use it as a fallback (`gh auth token`).
 
 ## Usage
