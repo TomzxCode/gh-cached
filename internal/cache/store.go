@@ -1,0 +1,208 @@
+package cache
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
+	"github.com/tomzxcode/gh-cached/internal/github"
+)
+
+// CacheInfo records when the full cache was last populated.
+type CacheInfo struct {
+	CachedAt time.Time `json:"cachedAt"`
+	Duration int       `json:"duration"` // minutes
+}
+
+// Store manages the on-disk cache at ~/.cache/gh-cached.
+type Store struct {
+	baseDir string
+}
+
+// NewStore creates a Store using the default cache directory.
+func NewStore() *Store {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = os.TempDir()
+	}
+	return &Store{baseDir: filepath.Join(home, ".cache", "gh-cached")}
+}
+
+func (s *Store) repoDir(host, owner, repo string) string {
+	return filepath.Join(s.baseDir, host, owner, repo)
+}
+
+func (s *Store) issueDir(host, owner, repo string) string {
+	return filepath.Join(s.repoDir(host, owner, repo), "issues")
+}
+
+func (s *Store) prDir(host, owner, repo string) string {
+	return filepath.Join(s.repoDir(host, owner, repo), "prs")
+}
+
+// SaveIssue writes a single issue to disk.
+func (s *Store) SaveIssue(host, owner, repo string, issue *github.Issue) error {
+	dir := s.issueDir(host, owner, repo)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("creating issue dir: %w", err)
+	}
+	data, err := json.MarshalIndent(issue, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, strconv.Itoa(issue.Number)+".json"), data, 0644)
+}
+
+// SavePR writes a single pull request to disk.
+func (s *Store) SavePR(host, owner, repo string, pr *github.PullRequest) error {
+	dir := s.prDir(host, owner, repo)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("creating pr dir: %w", err)
+	}
+	data, err := json.MarshalIndent(pr, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, strconv.Itoa(pr.Number)+".json"), data, 0644)
+}
+
+// LoadIssue reads a single issue from disk, returning the file's modification time.
+func (s *Store) LoadIssue(host, owner, repo string, number int) (*github.Issue, time.Time, error) {
+	path := filepath.Join(s.issueDir(host, owner, repo), strconv.Itoa(number)+".json")
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	var issue github.Issue
+	if err := json.Unmarshal(data, &issue); err != nil {
+		return nil, time.Time{}, err
+	}
+	return &issue, info.ModTime(), nil
+}
+
+// LoadPR reads a single pull request from disk, returning the file's modification time.
+func (s *Store) LoadPR(host, owner, repo string, number int) (*github.PullRequest, time.Time, error) {
+	path := filepath.Join(s.prDir(host, owner, repo), strconv.Itoa(number)+".json")
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	var pr github.PullRequest
+	if err := json.Unmarshal(data, &pr); err != nil {
+		return nil, time.Time{}, err
+	}
+	return &pr, info.ModTime(), nil
+}
+
+// LoadAllIssues reads every cached issue for a repository.
+func (s *Store) LoadAllIssues(host, owner, repo string) ([]*github.Issue, error) {
+	dir := s.issueDir(host, owner, repo)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var issues []*github.Issue
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			continue
+		}
+		var issue github.Issue
+		if err := json.Unmarshal(data, &issue); err != nil {
+			continue
+		}
+		issues = append(issues, &issue)
+	}
+	return issues, nil
+}
+
+// LoadAllPRs reads every cached pull request for a repository.
+func (s *Store) LoadAllPRs(host, owner, repo string) ([]*github.PullRequest, error) {
+	dir := s.prDir(host, owner, repo)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var prs []*github.PullRequest
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			continue
+		}
+		var pr github.PullRequest
+		if err := json.Unmarshal(data, &pr); err != nil {
+			continue
+		}
+		prs = append(prs, &pr)
+	}
+	return prs, nil
+}
+
+// SaveCacheInfo writes the cache metadata file.
+func (s *Store) SaveCacheInfo(host, owner, repo string, duration int) error {
+	dir := s.repoDir(host, owner, repo)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(CacheInfo{CachedAt: time.Now(), Duration: duration}, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, ".cache_info.json"), data, 0644)
+}
+
+// LoadCacheInfo reads the cache metadata file.
+func (s *Store) LoadCacheInfo(host, owner, repo string) (*CacheInfo, error) {
+	data, err := os.ReadFile(filepath.Join(s.repoDir(host, owner, repo), ".cache_info.json"))
+	if err != nil {
+		return nil, err
+	}
+	var info CacheInfo
+	if err := json.Unmarshal(data, &info); err != nil {
+		return nil, err
+	}
+	return &info, nil
+}
+
+// IsCacheFresh reports whether the full cache was populated within its stored duration.
+func (s *Store) IsCacheFresh(host, owner, repo string) (bool, error) {
+	info, err := s.LoadCacheInfo(host, owner, repo)
+	if err != nil {
+		return false, err
+	}
+	return time.Since(info.CachedAt) < time.Duration(info.Duration)*time.Minute, nil
+}
+
+// IsCacheFreshWithDuration reports whether the full cache was populated within the given duration.
+func (s *Store) IsCacheFreshWithDuration(host, owner, repo string, duration int) (bool, error) {
+	info, err := s.LoadCacheInfo(host, owner, repo)
+	if err != nil {
+		return false, err
+	}
+	return time.Since(info.CachedAt) < time.Duration(duration)*time.Minute, nil
+}
