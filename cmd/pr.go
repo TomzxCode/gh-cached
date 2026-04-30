@@ -44,6 +44,7 @@ var (
 var (
 	prViewComments bool
 	prViewJSON     bool
+	prViewRefresh  bool
 )
 
 var prListCmd = &cobra.Command{
@@ -78,6 +79,7 @@ func init() {
 
 	prViewCmd.Flags().BoolVarP(&prViewComments, "comments", "c", false, "View pull request comments")
 	prViewCmd.Flags().BoolVar(&prViewJSON, "json", false, "Output as JSON")
+	prViewCmd.Flags().BoolVar(&prViewRefresh, "refresh", false, "Force fetch from GitHub and update cache")
 }
 
 // ---------------------------------------------------------------------------
@@ -148,19 +150,21 @@ func runPRView(cmd *cobra.Command, args []string) error {
 
 	store := cache.NewStore()
 
-	// When a full cache is fresh, treat it as authoritative.
-	if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
-		pr, _, err := store.LoadPR(repo.Host, repo.Owner, repo.Name, number)
-		if err != nil {
-			return fmt.Errorf("pull request #%d not found in cache; run `gh-cached cache --force` to refresh", number)
-		}
-		return printPRView(pr, prViewComments, prViewJSON)
-	}
-
-	// No fresh full cache — try the individual file, then fall back to the API.
-	if pr, mtime, err := store.LoadPR(repo.Host, repo.Owner, repo.Name, number); err == nil {
-		if time.Since(mtime) < 60*time.Minute {
+	if !prViewRefresh {
+		// When a full cache is fresh, treat it as authoritative.
+		if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
+			pr, _, err := store.LoadPR(repo.Host, repo.Owner, repo.Name, number)
+			if err != nil {
+				return fmt.Errorf("pull request #%d not found in cache; run `gh-cached cache --force` to refresh", number)
+			}
 			return printPRView(pr, prViewComments, prViewJSON)
+		}
+
+		// No fresh full cache — try the individual file, then fall back to the API.
+		if pr, mtime, err := store.LoadPR(repo.Host, repo.Owner, repo.Name, number); err == nil {
+			if time.Since(mtime) < 60*time.Minute {
+				return printPRView(pr, prViewComments, prViewJSON)
+			}
 		}
 	}
 

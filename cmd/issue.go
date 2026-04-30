@@ -43,6 +43,7 @@ var (
 var (
 	issueViewComments bool
 	issueViewJSON     bool
+	issueViewRefresh  bool
 )
 
 var issueListCmd = &cobra.Command{
@@ -76,6 +77,7 @@ func init() {
 
 	issueViewCmd.Flags().BoolVarP(&issueViewComments, "comments", "c", false, "View issue comments")
 	issueViewCmd.Flags().BoolVar(&issueViewJSON, "json", false, "Output as JSON")
+	issueViewCmd.Flags().BoolVar(&issueViewRefresh, "refresh", false, "Force fetch from GitHub and update cache")
 }
 
 // ---------------------------------------------------------------------------
@@ -145,20 +147,22 @@ func runIssueView(cmd *cobra.Command, args []string) error {
 
 	store := cache.NewStore()
 
-	// When a full cache is fresh, treat it as authoritative: don't hit the API
-	// if the item isn't there — it simply doesn't exist (or wasn't cached).
-	if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
-		issue, _, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number)
-		if err != nil {
-			return fmt.Errorf("issue #%d not found in cache; run `gh-cached cache --force` to refresh", number)
-		}
-		return printIssueView(issue, issueViewComments, issueViewJSON)
-	}
-
-	// No fresh full cache — try the individual file, then fall back to the API.
-	if issue, mtime, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number); err == nil {
-		if time.Since(mtime) < 60*time.Minute {
+	if !issueViewRefresh {
+		// When a full cache is fresh, treat it as authoritative: don't hit the API
+		// if the item isn't there — it simply doesn't exist (or wasn't cached).
+		if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
+			issue, _, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number)
+			if err != nil {
+				return fmt.Errorf("issue #%d not found in cache; run `gh-cached cache --force` to refresh", number)
+			}
 			return printIssueView(issue, issueViewComments, issueViewJSON)
+		}
+
+		// No fresh full cache — try the individual file, then fall back to the API.
+		if issue, mtime, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number); err == nil {
+			if time.Since(mtime) < 60*time.Minute {
+				return printIssueView(issue, issueViewComments, issueViewJSON)
+			}
 		}
 	}
 
