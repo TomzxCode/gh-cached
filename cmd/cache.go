@@ -8,7 +8,10 @@ import (
 	"github.com/tomzxcode/gh-cached/internal/github"
 )
 
-var cacheDuration int
+var (
+	cacheDuration int
+	cacheForce    bool
+)
 
 var cacheCmd = &cobra.Command{
 	Use:   "cache",
@@ -21,6 +24,7 @@ serve results from this cache until it expires.`,
 
 func init() {
 	cacheCmd.Flags().IntVar(&cacheDuration, "cache-duration", 60, "Cache duration in minutes")
+	cacheCmd.Flags().BoolVar(&cacheForce, "force", false, "Re-fetch even if the cache is still fresh")
 }
 
 func runCache(cmd *cobra.Command, args []string) error {
@@ -31,10 +35,9 @@ func runCache(cmd *cobra.Command, args []string) error {
 
 	store := cache.NewStore()
 
-	// Skip if cache is still within the requested duration.
-	if cacheDuration > 0 {
+	if !cacheForce {
 		if fresh, _ := store.IsCacheFreshWithDuration(repo.Host, repo.Owner, repo.Name, cacheDuration); fresh {
-			fmt.Printf("Cache is still fresh (within %d minutes). Pass --cache-duration 0 to force a refresh.\n", cacheDuration)
+			fmt.Printf("Cache is still fresh (within %d minutes). Use --force to refresh anyway.\n", cacheDuration)
 			return nil
 		}
 	}

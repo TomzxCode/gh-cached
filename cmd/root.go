@@ -11,9 +11,11 @@ import (
 var repoFlag string
 
 var rootCmd = &cobra.Command{
-	Use:     "gh-cached",
-	Short:   "GitHub CLI with local caching",
-	Version: "0.1.0",
+	Use:          "gh-cached",
+	Short:        "GitHub CLI with local caching",
+	Version:      "0.1.0",
+	SilenceUsage: true,
+	SilenceErrors: true,
 	Long: `gh-cached is a GitHub CLI that caches issues, pull requests, and their comments
 locally to minimise API calls. The cache lives at ~/.cache/gh-cached/<host>/<owner>/<repo>.`,
 }
@@ -21,7 +23,7 @@ locally to minimise API calls. The cache lives at ~/.cache/gh-cached/<host>/<own
 // Execute is the entry point called from main.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
 }

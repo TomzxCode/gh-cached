@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -35,10 +36,14 @@ var (
 	prListLimit    int
 	prListSearch   string
 	prListState    string
+	prListJSON     bool
 )
 
 // pr view flags
-var prViewComments bool
+var (
+	prViewComments bool
+	prViewJSON     bool
+)
 
 var prListCmd = &cobra.Command{
 	Use:   "list",
@@ -67,8 +72,10 @@ func init() {
 	prListCmd.Flags().IntVarP(&prListLimit, "limit", "L", 30, "Maximum number of items to fetch")
 	prListCmd.Flags().StringVarP(&prListSearch, "search", "S", "", "Search pull requests with query")
 	prListCmd.Flags().StringVarP(&prListState, "state", "s", "open", "Filter by state: {open|closed|merged|all}")
+	prListCmd.Flags().BoolVar(&prListJSON, "json", false, "Output as JSON")
 
 	prViewCmd.Flags().BoolVarP(&prViewComments, "comments", "c", false, "View pull request comments")
+	prViewCmd.Flags().BoolVar(&prViewJSON, "json", false, "Output as JSON")
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +90,7 @@ func runPRList(cmd *cobra.Command, args []string) error {
 
 	store := cache.NewStore()
 
-	// Try serving from cache when it is fresh.
+	// Serve from cache when it is fresh.
 	if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
 		if prs, err := store.LoadAllPRs(repo.Host, repo.Owner, repo.Name); err == nil {
 			filtered := filterPRs(prs, prListState, prListAssignee, prListAuthor,
@@ -91,11 +98,11 @@ func runPRList(cmd *cobra.Command, args []string) error {
 			sort.Slice(filtered, func(i, j int) bool {
 				return filtered[i].UpdatedAt.After(filtered[j].UpdatedAt)
 			})
+			total := len(filtered)
 			if prListLimit > 0 && len(filtered) > prListLimit {
 				filtered = filtered[:prListLimit]
 			}
-			printPRList(filtered)
-			return nil
+			return printPRList(filtered, total, prListJSON)
 		}
 	}
 
@@ -123,8 +130,7 @@ func runPRList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	printPRList(prs)
-	return nil
+	return printPRList(prs, len(prs), prListJSON)
 }
 
 func runPRView(cmd *cobra.Command, args []string) error {
@@ -139,10 +145,20 @@ func runPRView(cmd *cobra.Command, args []string) error {
 	}
 
 	store := cache.NewStore()
+
+	// When a full cache is fresh, treat it as authoritative.
+	if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
+		pr, _, err := store.LoadPR(repo.Host, repo.Owner, repo.Name, number)
+		if err != nil {
+			return fmt.Errorf("pull request #%d not found in cache; run `gh-cached cache --force` to refresh", number)
+		}
+		return printPRView(pr, prViewComments, prViewJSON)
+	}
+
+	// No fresh full cache — try the individual file, then fall back to the API.
 	if pr, mtime, err := store.LoadPR(repo.Host, repo.Owner, repo.Name, number); err == nil {
 		if time.Since(mtime) < 60*time.Minute {
-			printPRView(pr, prViewComments)
-			return nil
+			return printPRView(pr, prViewComments, prViewJSON)
 		}
 	}
 
@@ -156,11 +172,8 @@ func runPRView(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Persist to cache for future use.
 	_ = store.SavePR(repo.Host, repo.Owner, repo.Name, pr)
-
-	printPRView(pr, prViewComments)
-	return nil
+	return printPRView(pr, prViewComments, prViewJSON)
 }
 
 // ---------------------------------------------------------------------------
@@ -239,48 +252,68 @@ func hasAllLabelsPR(prLabels []github.Label, wantLabels []string) bool {
 // Display
 // ---------------------------------------------------------------------------
 
-func printPRList(prs []*github.PullRequest) {
+func printPRList(prs []*github.PullRequest, total int, asJSON bool) error {
+	if asJSON {
+		if prs == nil {
+			prs = []*github.PullRequest{}
+		}
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(prs)
+	}
+
 	if len(prs) == 0 {
 		fmt.Println("No pull requests found.")
-		return
+		return nil
 	}
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
-	defer w.Flush()
 	for _, pr := range prs {
-		labels := make([]string, len(pr.Labels))
-		for i, l := range pr.Labels {
-			labels[i] = l.Name
-		}
 		draft := ""
 		if pr.IsDraft {
 			draft = " [draft]"
 		}
-		branch := fmt.Sprintf("%s → %s", pr.HeadRefName, pr.BaseRefName)
 		count := pr.CommentCount
 		if count == 0 {
-			count = len(pr.Comments) // fallback for cache files written before CommentCount was added
+			count = len(pr.Comments)
 		}
-		fmt.Fprintf(w, "#%d\t%s%s\t%s\t%d\t%s\n",
+		fmt.Fprintf(w, "#%d\t%s%s\t%s → %s\t%d\t%s\n",
 			pr.Number,
 			truncate(pr.Title, 55),
 			draft,
-			branch,
+			pr.HeadRefName,
+			pr.BaseRefName,
 			count,
 			pr.UpdatedAt.Format("2006-01-02"),
 		)
 	}
+	w.Flush()
+
+	if total > len(prs) {
+		fmt.Fprintf(os.Stderr, "Showing %d of %d pull requests\n", len(prs), total)
+	}
+	return nil
 }
 
-func printPRView(pr *github.PullRequest, showComments bool) {
+func printPRView(pr *github.PullRequest, showComments bool, asJSON bool) error {
+	if asJSON {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(pr)
+	}
+
 	fmt.Printf("#%d %s\n", pr.Number, pr.Title)
 
-	status := strings.ToUpper(pr.State)
 	draftTag := ""
 	if pr.IsDraft {
-		draftTag = " • draft"
+		draftTag = " • DRAFT"
+	}
+	commentCount := pr.CommentCount
+	if commentCount == 0 {
+		commentCount = len(pr.Comments)
 	}
 	fmt.Printf("%s%s • opened by %s • %d comment(s)\n",
-		status, draftTag, pr.Author.Login, len(pr.Comments))
+		strings.ToUpper(pr.State), draftTag, pr.Author.Login, commentCount)
 	fmt.Println()
 
 	fmt.Printf("Branch:    %s → %s\n", pr.HeadRefName, pr.BaseRefName)
@@ -318,5 +351,5 @@ func printPRView(pr *github.PullRequest, showComments bool) {
 			fmt.Println(c.Body)
 		}
 	}
+	return nil
 }
-

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -34,10 +35,14 @@ var (
 	issueListMilestone string
 	issueListSearch    string
 	issueListState     string
+	issueListJSON      bool
 )
 
 // issue view flags
-var issueViewComments bool
+var (
+	issueViewComments bool
+	issueViewJSON     bool
+)
 
 var issueListCmd = &cobra.Command{
 	Use:   "list",
@@ -65,8 +70,10 @@ func init() {
 	issueListCmd.Flags().StringVarP(&issueListMilestone, "milestone", "m", "", "Filter by milestone number or title")
 	issueListCmd.Flags().StringVarP(&issueListSearch, "search", "S", "", "Search issues with query")
 	issueListCmd.Flags().StringVarP(&issueListState, "state", "s", "open", "Filter by state: {open|closed|all}")
+	issueListCmd.Flags().BoolVar(&issueListJSON, "json", false, "Output as JSON")
 
 	issueViewCmd.Flags().BoolVarP(&issueViewComments, "comments", "c", false, "View issue comments")
+	issueViewCmd.Flags().BoolVar(&issueViewJSON, "json", false, "Output as JSON")
 }
 
 // ---------------------------------------------------------------------------
@@ -81,7 +88,7 @@ func runIssueList(cmd *cobra.Command, args []string) error {
 
 	store := cache.NewStore()
 
-	// Try serving from cache when it is fresh.
+	// Serve from cache when it is fresh.
 	if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
 		if issues, err := store.LoadAllIssues(repo.Host, repo.Owner, repo.Name); err == nil {
 			filtered := filterIssues(issues, issueListState, issueListAssignee, issueListAuthor,
@@ -89,11 +96,11 @@ func runIssueList(cmd *cobra.Command, args []string) error {
 			sort.Slice(filtered, func(i, j int) bool {
 				return filtered[i].UpdatedAt.After(filtered[j].UpdatedAt)
 			})
+			total := len(filtered)
 			if issueListLimit > 0 && len(filtered) > issueListLimit {
 				filtered = filtered[:issueListLimit]
 			}
-			printIssueList(filtered)
-			return nil
+			return printIssueList(filtered, total, issueListJSON)
 		}
 	}
 
@@ -120,8 +127,7 @@ func runIssueList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	printIssueList(issues)
-	return nil
+	return printIssueList(issues, len(issues), issueListJSON)
 }
 
 func runIssueView(cmd *cobra.Command, args []string) error {
@@ -136,10 +142,21 @@ func runIssueView(cmd *cobra.Command, args []string) error {
 	}
 
 	store := cache.NewStore()
+
+	// When a full cache is fresh, treat it as authoritative: don't hit the API
+	// if the item isn't there — it simply doesn't exist (or wasn't cached).
+	if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
+		issue, _, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number)
+		if err != nil {
+			return fmt.Errorf("issue #%d not found in cache; run `gh-cached cache --force` to refresh", number)
+		}
+		return printIssueView(issue, issueViewComments, issueViewJSON)
+	}
+
+	// No fresh full cache — try the individual file, then fall back to the API.
 	if issue, mtime, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number); err == nil {
 		if time.Since(mtime) < 60*time.Minute {
-			printIssueView(issue, issueViewComments)
-			return nil
+			return printIssueView(issue, issueViewComments, issueViewJSON)
 		}
 	}
 
@@ -153,11 +170,8 @@ func runIssueView(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Persist to cache for future use.
 	_ = store.SaveIssue(repo.Host, repo.Owner, repo.Name, issue)
-
-	printIssueView(issue, issueViewComments)
-	return nil
+	return printIssueView(issue, issueViewComments, issueViewJSON)
 }
 
 // ---------------------------------------------------------------------------
@@ -236,35 +250,58 @@ func hasAllLabels(issueLabels []github.Label, wantLabels []string) bool {
 // Display
 // ---------------------------------------------------------------------------
 
-func printIssueList(issues []*github.Issue) {
+func printIssueList(issues []*github.Issue, total int, asJSON bool) error {
+	if asJSON {
+		if issues == nil {
+			issues = []*github.Issue{}
+		}
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(issues)
+	}
+
 	if len(issues) == 0 {
 		fmt.Println("No issues found.")
-		return
+		return nil
 	}
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
-	defer w.Flush()
 	for _, issue := range issues {
-		labels := labelNames(issue.Labels)
 		count := issue.CommentCount
 		if count == 0 {
-			count = len(issue.Comments) // fallback for cache files written before CommentCount was added
+			count = len(issue.Comments)
 		}
 		fmt.Fprintf(w, "#%d\t%s\t%s\t%d\t%s\n",
 			issue.Number,
 			truncate(issue.Title, 60),
-			strings.Join(labels, ", "),
+			strings.Join(labelNames(issue.Labels), ", "),
 			count,
 			issue.UpdatedAt.Format("2006-01-02"),
 		)
 	}
+	w.Flush()
+
+	if total > len(issues) {
+		fmt.Fprintf(os.Stderr, "Showing %d of %d issues\n", len(issues), total)
+	}
+	return nil
 }
 
-func printIssueView(issue *github.Issue, showComments bool) {
+func printIssueView(issue *github.Issue, showComments bool, asJSON bool) error {
+	if asJSON {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(issue)
+	}
+
 	fmt.Printf("#%d %s\n", issue.Number, issue.Title)
 
-	status := strings.ToLower(issue.State)
+	commentCount := issue.CommentCount
+	if commentCount == 0 {
+		commentCount = len(issue.Comments)
+	}
 	fmt.Printf("%s • opened by %s • %d comment(s)\n",
-		status, issue.Author.Login, len(issue.Comments))
+		strings.ToUpper(issue.State), issue.Author.Login, commentCount)
 	fmt.Println()
 
 	if len(issue.Labels) > 0 {
@@ -295,6 +332,7 @@ func printIssueView(issue *github.Issue, showComments bool) {
 			fmt.Println(c.Body)
 		}
 	}
+	return nil
 }
 
 // ---------------------------------------------------------------------------
