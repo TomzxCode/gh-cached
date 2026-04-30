@@ -206,3 +206,70 @@ func (s *Store) IsCacheFreshWithDuration(host, owner, repo string, duration int)
 	}
 	return time.Since(info.CachedAt) < time.Duration(duration)*time.Minute, nil
 }
+
+// CachedRepo describes a repository found in the local cache.
+type CachedRepo struct {
+	Host      string
+	Owner     string
+	Repo      string
+	Info      *CacheInfo
+	IssueCount int
+	PRCount    int
+}
+
+// ListCachedRepos walks the cache directory and returns all cached repositories.
+func (s *Store) ListCachedRepos() ([]CachedRepo, error) {
+	hosts, err := os.ReadDir(s.baseDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var repos []CachedRepo
+	for _, hostEntry := range hosts {
+		if !hostEntry.IsDir() {
+			continue
+		}
+		host := hostEntry.Name()
+		owners, err := os.ReadDir(filepath.Join(s.baseDir, host))
+		if err != nil {
+			continue
+		}
+		for _, ownerEntry := range owners {
+			if !ownerEntry.IsDir() {
+				continue
+			}
+			owner := ownerEntry.Name()
+			repoEntries, err := os.ReadDir(filepath.Join(s.baseDir, host, owner))
+			if err != nil {
+				continue
+			}
+			for _, repoEntry := range repoEntries {
+				if !repoEntry.IsDir() {
+					continue
+				}
+				repoName := repoEntry.Name()
+				cr := CachedRepo{Host: host, Owner: owner, Repo: repoName}
+				cr.Info, _ = s.LoadCacheInfo(host, owner, repoName)
+				if entries, err := os.ReadDir(s.issueDir(host, owner, repoName)); err == nil {
+					for _, e := range entries {
+						if !e.IsDir() && filepath.Ext(e.Name()) == ".json" {
+							cr.IssueCount++
+						}
+					}
+				}
+				if entries, err := os.ReadDir(s.prDir(host, owner, repoName)); err == nil {
+					for _, e := range entries {
+						if !e.IsDir() && filepath.Ext(e.Name()) == ".json" {
+							cr.PRCount++
+						}
+					}
+				}
+				repos = append(repos, cr)
+			}
+		}
+	}
+	return repos, nil
+}

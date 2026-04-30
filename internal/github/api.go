@@ -84,22 +84,23 @@ type issueNode struct {
 }
 
 type prNode struct {
-	Number      int           `json:"number"`
-	Title       string        `json:"title"`
-	State       string        `json:"state"`
-	IsDraft     bool          `json:"isDraft"`
-	Author      actorNode     `json:"author"`
-	Assignees   struct{ Nodes []actorNode } `json:"assignees"`
-	Labels      struct{ Nodes []labelNode }  `json:"labels"`
-	Milestone   *milestoneNode               `json:"milestone"`
-	BaseRefName string        `json:"baseRefName"`
-	HeadRefName string        `json:"headRefName"`
-	CreatedAt   time.Time     `json:"createdAt"`
-	UpdatedAt   time.Time     `json:"updatedAt"`
-	MergedAt    *time.Time    `json:"mergedAt"`
-	ClosedAt    *time.Time    `json:"closedAt"`
-	URL         string        `json:"url"`
-	Body        string        `json:"body"`
+	Number         int            `json:"number"`
+	Title          string         `json:"title"`
+	State          string         `json:"state"`
+	IsDraft        bool           `json:"isDraft"`
+	ReviewDecision string         `json:"reviewDecision"`
+	Author         actorNode      `json:"author"`
+	Assignees      struct{ Nodes []actorNode } `json:"assignees"`
+	Labels         struct{ Nodes []labelNode }  `json:"labels"`
+	Milestone      *milestoneNode               `json:"milestone"`
+	BaseRefName    string         `json:"baseRefName"`
+	HeadRefName    string         `json:"headRefName"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	UpdatedAt      time.Time      `json:"updatedAt"`
+	MergedAt       *time.Time     `json:"mergedAt"`
+	ClosedAt       *time.Time     `json:"closedAt"`
+	URL            string         `json:"url"`
+	Body           string         `json:"body"`
 	Comments struct {
 		TotalCount int           `json:"totalCount"`
 		Nodes      []commentNode `json:"nodes"`
@@ -108,23 +109,24 @@ type prNode struct {
 
 // searchNode covers both Issue and PullRequest fields from a search result.
 type searchNode struct {
-	Typename    string        `json:"__typename"`
-	Number      int           `json:"number"`
-	Title       string        `json:"title"`
-	State       string        `json:"state"`
-	IsDraft     bool          `json:"isDraft"`
-	Author      actorNode     `json:"author"`
-	Assignees   struct{ Nodes []actorNode } `json:"assignees"`
-	Labels      struct{ Nodes []labelNode }  `json:"labels"`
-	Milestone   *milestoneNode               `json:"milestone"`
-	BaseRefName string        `json:"baseRefName"`
-	HeadRefName string        `json:"headRefName"`
-	CreatedAt   time.Time     `json:"createdAt"`
-	UpdatedAt   time.Time     `json:"updatedAt"`
-	MergedAt    *time.Time    `json:"mergedAt"`
-	ClosedAt    *time.Time    `json:"closedAt"`
-	URL         string        `json:"url"`
-	Body        string        `json:"body"`
+	Typename       string         `json:"__typename"`
+	Number         int            `json:"number"`
+	Title          string         `json:"title"`
+	State          string         `json:"state"`
+	IsDraft        bool           `json:"isDraft"`
+	ReviewDecision string         `json:"reviewDecision"`
+	Author         actorNode      `json:"author"`
+	Assignees      struct{ Nodes []actorNode } `json:"assignees"`
+	Labels         struct{ Nodes []labelNode }  `json:"labels"`
+	Milestone      *milestoneNode               `json:"milestone"`
+	BaseRefName    string         `json:"baseRefName"`
+	HeadRefName    string         `json:"headRefName"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	UpdatedAt      time.Time      `json:"updatedAt"`
+	MergedAt       *time.Time     `json:"mergedAt"`
+	ClosedAt       *time.Time     `json:"closedAt"`
+	URL            string         `json:"url"`
+	Body           string         `json:"body"`
 	Comments struct {
 		TotalCount int           `json:"totalCount"`
 		Nodes      []commentNode `json:"nodes"`
@@ -165,20 +167,21 @@ func nodeToIssue(n *issueNode) *Issue {
 
 func nodeToPR(n *prNode) *PullRequest {
 	pr := &PullRequest{
-		Number:       n.Number,
-		Title:        n.Title,
-		State:        n.State,
-		IsDraft:      n.IsDraft,
-		Author:       Actor{Login: n.Author.Login},
-		BaseRefName:  n.BaseRefName,
-		HeadRefName:  n.HeadRefName,
-		CreatedAt:    n.CreatedAt,
-		UpdatedAt:    n.UpdatedAt,
-		MergedAt:     n.MergedAt,
-		ClosedAt:     n.ClosedAt,
-		URL:          n.URL,
-		Body:         n.Body,
-		CommentCount: n.Comments.TotalCount,
+		Number:         n.Number,
+		Title:          n.Title,
+		State:          n.State,
+		IsDraft:        n.IsDraft,
+		ReviewDecision: n.ReviewDecision,
+		Author:         Actor{Login: n.Author.Login},
+		BaseRefName:    n.BaseRefName,
+		HeadRefName:    n.HeadRefName,
+		CreatedAt:      n.CreatedAt,
+		UpdatedAt:      n.UpdatedAt,
+		MergedAt:       n.MergedAt,
+		ClosedAt:       n.ClosedAt,
+		URL:            n.URL,
+		Body:           n.Body,
+		CommentCount:   n.Comments.TotalCount,
 	}
 	for _, a := range n.Assignees.Nodes {
 		pr.Assignees = append(pr.Assignees, Actor{Login: a.Login})
@@ -225,20 +228,21 @@ func searchNodeToIssue(n *searchNode) *Issue {
 
 func searchNodeToPR(n *searchNode) *PullRequest {
 	pr := &PullRequest{
-		Number:       n.Number,
-		Title:        n.Title,
-		State:        n.State,
-		IsDraft:      n.IsDraft,
-		Author:       Actor{Login: n.Author.Login},
-		BaseRefName:  n.BaseRefName,
-		HeadRefName:  n.HeadRefName,
-		CreatedAt:    n.CreatedAt,
-		UpdatedAt:    n.UpdatedAt,
-		MergedAt:     n.MergedAt,
-		ClosedAt:     n.ClosedAt,
-		URL:          n.URL,
-		Body:         n.Body,
-		CommentCount: n.Comments.TotalCount,
+		Number:         n.Number,
+		Title:          n.Title,
+		State:          n.State,
+		IsDraft:        n.IsDraft,
+		ReviewDecision: n.ReviewDecision,
+		Author:         Actor{Login: n.Author.Login},
+		BaseRefName:    n.BaseRefName,
+		HeadRefName:    n.HeadRefName,
+		CreatedAt:      n.CreatedAt,
+		UpdatedAt:      n.UpdatedAt,
+		MergedAt:       n.MergedAt,
+		ClosedAt:       n.ClosedAt,
+		URL:            n.URL,
+		Body:           n.Body,
+		CommentCount:   n.Comments.TotalCount,
 	}
 	for _, a := range n.Assignees.Nodes {
 		pr.Assignees = append(pr.Assignees, Actor{Login: a.Login})
@@ -325,9 +329,9 @@ query($query: String!, $first: Int!, $after: String) {
 }`
 
 const fetchAllIssuesQuery = `
-query($owner: String!, $repo: String!, $after: String) {
+query($owner: String!, $repo: String!, $after: String, $since: DateTime) {
   repository(owner: $owner, name: $repo) {
-    issues(first: 100, states: [OPEN, CLOSED], after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
+    issues(first: 100, states: [OPEN, CLOSED], filterBy: {since: $since}, after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
         number title state
@@ -509,7 +513,8 @@ func (c *Client) GetIssue(owner, repo string, number int) (*Issue, error) {
 }
 
 // FetchAllIssues retrieves every issue (all states) with comments for caching.
-func (c *Client) FetchAllIssues(owner, repo string) ([]*Issue, error) {
+// If since is non-nil, only issues updated at or after that time are fetched (delta update).
+func (c *Client) FetchAllIssues(owner, repo string, since *time.Time) ([]*Issue, error) {
 	var issues []*Issue
 	var cursor string
 
@@ -517,6 +522,9 @@ func (c *Client) FetchAllIssues(owner, repo string) ([]*Issue, error) {
 		vars := map[string]interface{}{
 			"owner": owner,
 			"repo":  repo,
+		}
+		if since != nil {
+			vars["since"] = since.UTC().Format(time.RFC3339)
 		}
 		if cursor != "" {
 			vars["after"] = cursor
@@ -561,7 +569,7 @@ query($owner: String!, $repo: String!, $first: Int!, $states: [PullRequestState!
     pullRequests(first: $first, states: $states, labels: $labels, baseRefName: $baseRefName, headRefName: $headRefName, after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number title state isDraft
+        number title state isDraft reviewDecision
         author { login }
         assignees(first: 10) { nodes { login } }
         labels(first: 20) { nodes { name color } }
@@ -578,7 +586,7 @@ const getPRQuery = `
 query($owner: String!, $repo: String!, $number: Int!) {
   repository(owner: $owner, name: $repo) {
     pullRequest(number: $number) {
-      number title state isDraft
+      number title state isDraft reviewDecision
       author { login }
       assignees(first: 10) { nodes { login } }
       labels(first: 20) { nodes { name color } }
@@ -599,7 +607,7 @@ query($query: String!, $first: Int!, $after: String) {
     nodes {
       __typename
       ... on PullRequest {
-        number title state isDraft
+        number title state isDraft reviewDecision
         author { login }
         assignees(first: 10) { nodes { login } }
         labels(first: 20) { nodes { name color } }
@@ -618,7 +626,7 @@ query($owner: String!, $repo: String!, $after: String) {
     pullRequests(first: 100, states: [OPEN, CLOSED, MERGED], after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number title state isDraft
+        number title state isDraft reviewDecision
         author { login }
         assignees(first: 10) { nodes { login } }
         labels(first: 20) { nodes { name color } }
@@ -789,7 +797,8 @@ func (c *Client) GetPR(owner, repo string, number int) (*PullRequest, error) {
 }
 
 // FetchAllPRs retrieves every pull request (all states) with comments for caching.
-func (c *Client) FetchAllPRs(owner, repo string) ([]*PullRequest, error) {
+// If since is non-nil, pagination stops early once a PR updated before that time is seen.
+func (c *Client) FetchAllPRs(owner, repo string, since *time.Time) ([]*PullRequest, error) {
 	var prs []*PullRequest
 	var cursor string
 
@@ -818,11 +827,17 @@ func (c *Client) FetchAllPRs(owner, repo string) ([]*PullRequest, error) {
 			return nil, err
 		}
 
+		done := false
 		for i := range result.Repository.PullRequests.Nodes {
-			prs = append(prs, nodeToPR(&result.Repository.PullRequests.Nodes[i]))
+			n := &result.Repository.PullRequests.Nodes[i]
+			if since != nil && n.UpdatedAt.Before(*since) {
+				done = true
+				break
+			}
+			prs = append(prs, nodeToPR(n))
 		}
 
-		if !result.Repository.PullRequests.PageInfo.HasNextPage {
+		if done || !result.Repository.PullRequests.PageInfo.HasNextPage {
 			break
 		}
 		cursor = result.Repository.PullRequests.PageInfo.EndCursor

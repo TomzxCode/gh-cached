@@ -26,17 +26,18 @@ var prCmd = &cobra.Command{
 
 // pr list flags
 var (
-	prListApp      string
-	prListAssignee string
-	prListAuthor   string
-	prListBase     string
-	prListDraft    bool
-	prListHead     string
-	prListLabels   []string
-	prListLimit    int
-	prListSearch   string
-	prListState    string
-	prListJSON     bool
+	prListApp        string
+	prListAssignee   string
+	prListAuthor     string
+	prListBase       string
+	prListDraft      bool
+	prListHead       string
+	prListLabels     []string
+	prListLimit      int
+	prListSearch     string
+	prListState      string
+	prListJSON       bool
+	prListNoTruncate bool
 )
 
 // pr view flags
@@ -73,6 +74,7 @@ func init() {
 	prListCmd.Flags().StringVarP(&prListSearch, "search", "S", "", "Search pull requests with query")
 	prListCmd.Flags().StringVarP(&prListState, "state", "s", "open", "Filter by state: {open|closed|merged|all}")
 	prListCmd.Flags().BoolVar(&prListJSON, "json", false, "Output as JSON")
+	prListCmd.Flags().BoolVar(&prListNoTruncate, "no-truncate", false, "Don't truncate long titles")
 
 	prViewCmd.Flags().BoolVarP(&prViewComments, "comments", "c", false, "View pull request comments")
 	prViewCmd.Flags().BoolVar(&prViewJSON, "json", false, "Output as JSON")
@@ -102,7 +104,7 @@ func runPRList(cmd *cobra.Command, args []string) error {
 			if prListLimit > 0 && len(filtered) > prListLimit {
 				filtered = filtered[:prListLimit]
 			}
-			return printPRList(filtered, total, prListJSON)
+			return printPRList(filtered, total, prListJSON, prListNoTruncate)
 		}
 	}
 
@@ -130,7 +132,7 @@ func runPRList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return printPRList(prs, len(prs), prListJSON)
+	return printPRList(prs, len(prs), prListJSON, prListNoTruncate)
 }
 
 func runPRView(cmd *cobra.Command, args []string) error {
@@ -232,6 +234,19 @@ func filterPRs(prs []*github.PullRequest, state, assignee, author string,
 	return result
 }
 
+func formatReviewDecision(d string) string {
+	switch d {
+	case "APPROVED":
+		return "approved"
+	case "CHANGES_REQUESTED":
+		return "changes requested"
+	case "REVIEW_REQUIRED":
+		return "review required"
+	default:
+		return d
+	}
+}
+
 func hasAllLabelsPR(prLabels []github.Label, wantLabels []string) bool {
 	for _, want := range wantLabels {
 		found := false
@@ -252,7 +267,7 @@ func hasAllLabelsPR(prLabels []github.Label, wantLabels []string) bool {
 // Display
 // ---------------------------------------------------------------------------
 
-func printPRList(prs []*github.PullRequest, total int, asJSON bool) error {
+func printPRList(prs []*github.PullRequest, total int, asJSON bool, noTruncate bool) error {
 	if asJSON {
 		if prs == nil {
 			prs = []*github.PullRequest{}
@@ -277,12 +292,18 @@ func printPRList(prs []*github.PullRequest, total int, asJSON bool) error {
 		if count == 0 {
 			count = len(pr.Comments)
 		}
-		fmt.Fprintf(w, "#%d\t%s%s\t%s → %s\t%d\t%s\n",
+		title := pr.Title
+		if !noTruncate {
+			title = truncate(title, 55)
+		}
+		review := formatReviewDecision(pr.ReviewDecision)
+		fmt.Fprintf(w, "#%d\t%s%s\t%s → %s\t%s\t%d\t%s\n",
 			pr.Number,
-			truncate(pr.Title, 55),
+			title,
 			draft,
 			pr.HeadRefName,
 			pr.BaseRefName,
+			review,
 			count,
 			pr.UpdatedAt.Format("2006-01-02"),
 		)
@@ -317,6 +338,9 @@ func printPRView(pr *github.PullRequest, showComments bool, asJSON bool) error {
 	fmt.Println()
 
 	fmt.Printf("Branch:    %s → %s\n", pr.HeadRefName, pr.BaseRefName)
+	if pr.ReviewDecision != "" {
+		fmt.Printf("Review:    %s\n", formatReviewDecision(pr.ReviewDecision))
+	}
 	if len(pr.Labels) > 0 {
 		names := make([]string, len(pr.Labels))
 		for i, l := range pr.Labels {

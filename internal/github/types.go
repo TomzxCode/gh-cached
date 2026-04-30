@@ -36,10 +36,11 @@ type PullRequest struct {
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	MergedAt    *time.Time `json:"mergedAt,omitempty"`
 	ClosedAt    *time.Time `json:"closedAt,omitempty"`
-	URL          string    `json:"url"`
-	Body         string    `json:"body"`
-	CommentCount int       `json:"commentCount"`
-	Comments     []Comment `json:"comments"`
+	URL            string    `json:"url"`
+	Body           string    `json:"body"`
+	CommentCount   int       `json:"commentCount"`
+	Comments       []Comment `json:"comments"`
+	ReviewDecision string    `json:"reviewDecision,omitempty"`
 }
 
 // Comment is a single issue or PR comment.

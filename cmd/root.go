@@ -34,6 +34,7 @@ func init() {
 	rootCmd.AddCommand(issueCmd)
 	rootCmd.AddCommand(prCmd)
 	rootCmd.AddCommand(cacheCmd)
+	rootCmd.AddCommand(repoCmd)
 }
 
 // getRepo resolves the target repository from the --repo flag or the current

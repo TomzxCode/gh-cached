@@ -26,16 +26,17 @@ var issueCmd = &cobra.Command{
 
 // issue list flags
 var (
-	issueListApp       string
-	issueListAssignee  string
-	issueListAuthor    string
-	issueListLabels    []string
-	issueListLimit     int
-	issueListMention   string
-	issueListMilestone string
-	issueListSearch    string
-	issueListState     string
-	issueListJSON      bool
+	issueListApp        string
+	issueListAssignee   string
+	issueListAuthor     string
+	issueListLabels     []string
+	issueListLimit      int
+	issueListMention    string
+	issueListMilestone  string
+	issueListSearch     string
+	issueListState      string
+	issueListJSON       bool
+	issueListNoTruncate bool
 )
 
 // issue view flags
@@ -71,6 +72,7 @@ func init() {
 	issueListCmd.Flags().StringVarP(&issueListSearch, "search", "S", "", "Search issues with query")
 	issueListCmd.Flags().StringVarP(&issueListState, "state", "s", "open", "Filter by state: {open|closed|all}")
 	issueListCmd.Flags().BoolVar(&issueListJSON, "json", false, "Output as JSON")
+	issueListCmd.Flags().BoolVar(&issueListNoTruncate, "no-truncate", false, "Don't truncate long titles")
 
 	issueViewCmd.Flags().BoolVarP(&issueViewComments, "comments", "c", false, "View issue comments")
 	issueViewCmd.Flags().BoolVar(&issueViewJSON, "json", false, "Output as JSON")
@@ -100,7 +102,7 @@ func runIssueList(cmd *cobra.Command, args []string) error {
 			if issueListLimit > 0 && len(filtered) > issueListLimit {
 				filtered = filtered[:issueListLimit]
 			}
-			return printIssueList(filtered, total, issueListJSON)
+			return printIssueList(filtered, total, issueListJSON, issueListNoTruncate)
 		}
 	}
 
@@ -127,7 +129,7 @@ func runIssueList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return printIssueList(issues, len(issues), issueListJSON)
+	return printIssueList(issues, len(issues), issueListJSON, issueListNoTruncate)
 }
 
 func runIssueView(cmd *cobra.Command, args []string) error {
@@ -250,7 +252,7 @@ func hasAllLabels(issueLabels []github.Label, wantLabels []string) bool {
 // Display
 // ---------------------------------------------------------------------------
 
-func printIssueList(issues []*github.Issue, total int, asJSON bool) error {
+func printIssueList(issues []*github.Issue, total int, asJSON bool, noTruncate bool) error {
 	if asJSON {
 		if issues == nil {
 			issues = []*github.Issue{}
@@ -271,9 +273,13 @@ func printIssueList(issues []*github.Issue, total int, asJSON bool) error {
 		if count == 0 {
 			count = len(issue.Comments)
 		}
+		title := issue.Title
+		if !noTruncate {
+			title = truncate(title, 60)
+		}
 		fmt.Fprintf(w, "#%d\t%s\t%s\t%d\t%s\n",
 			issue.Number,
-			truncate(issue.Title, 60),
+			title,
 			strings.Join(labelNames(issue.Labels), ", "),
 			count,
 			issue.UpdatedAt.Format("2006-01-02"),

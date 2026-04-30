@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tomzxcode/gh-cached/internal/cache"
@@ -42,13 +43,28 @@ func runCache(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Determine the delta cutoff: the previous cache timestamp (if any).
+	// --force bypasses the freshness check above but we still want to do a
+	// full fetch, so only use the delta when not forcing.
+	var since *time.Time
+	if !cacheForce {
+		if info, err := store.LoadCacheInfo(repo.Host, repo.Owner, repo.Name); err == nil {
+			t := info.CachedAt
+			since = &t
+		}
+	}
+
 	client, err := github.NewClient(repo.Host)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Caching issues for %s/%s...\n", repo.Owner, repo.Name)
-	issues, err := client.FetchAllIssues(repo.Owner, repo.Name)
+	if since != nil {
+		fmt.Printf("Fetching issues updated since %s for %s/%s...\n", since.Format("2006-01-02 15:04"), repo.Owner, repo.Name)
+	} else {
+		fmt.Printf("Caching issues for %s/%s...\n", repo.Owner, repo.Name)
+	}
+	issues, err := client.FetchAllIssues(repo.Owner, repo.Name, since)
 	if err != nil {
 		return fmt.Errorf("fetching issues: %w", err)
 	}
@@ -59,8 +75,12 @@ func runCache(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Cached %d issue(s).\n", len(issues))
 
-	fmt.Printf("Caching pull requests for %s/%s...\n", repo.Owner, repo.Name)
-	prs, err := client.FetchAllPRs(repo.Owner, repo.Name)
+	if since != nil {
+		fmt.Printf("Fetching PRs updated since %s for %s/%s...\n", since.Format("2006-01-02 15:04"), repo.Owner, repo.Name)
+	} else {
+		fmt.Printf("Caching pull requests for %s/%s...\n", repo.Owner, repo.Name)
+	}
+	prs, err := client.FetchAllPRs(repo.Owner, repo.Name, since)
 	if err != nil {
 		return fmt.Errorf("fetching pull requests: %w", err)
 	}
