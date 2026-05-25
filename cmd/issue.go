@@ -67,7 +67,7 @@ func init() {
 	issueListCmd.Flags().StringVarP(&issueListAssignee, "assignee", "a", "", "Filter by assignee")
 	issueListCmd.Flags().StringVarP(&issueListAuthor, "author", "A", "", "Filter by author")
 	issueListCmd.Flags().StringSliceVarP(&issueListLabels, "label", "l", nil, "Filter by label")
-	issueListCmd.Flags().IntVarP(&issueListLimit, "limit", "L", 30, "Maximum number of issues to fetch")
+	issueListCmd.Flags().IntVarP(&issueListLimit, "limit", "L", 1000, "Maximum number of issues to fetch")
 	issueListCmd.Flags().StringVar(&issueListMention, "mention", "", "Filter by mention")
 	issueListCmd.Flags().StringVarP(&issueListMilestone, "milestone", "m", "", "Filter by milestone number or title")
 	issueListCmd.Flags().StringVarP(&issueListSearch, "search", "S", "", "Search issues with query")

@@ -71,7 +71,7 @@ func init() {
 	prListCmd.Flags().BoolVarP(&prListDraft, "draft", "d", false, "Filter by draft state")
 	prListCmd.Flags().StringVarP(&prListHead, "head", "H", "", "Filter by head branch")
 	prListCmd.Flags().StringSliceVarP(&prListLabels, "label", "l", nil, "Filter by label")
-	prListCmd.Flags().IntVarP(&prListLimit, "limit", "L", 30, "Maximum number of items to fetch")
+	prListCmd.Flags().IntVarP(&prListLimit, "limit", "L", 1000, "Maximum number of items to fetch")
 	prListCmd.Flags().StringVarP(&prListSearch, "search", "S", "", "Search pull requests with query")
 	prListCmd.Flags().StringVarP(&prListState, "state", "s", "open", "Filter by state: {open|closed|merged|all}")
 	prListCmd.Flags().BoolVar(&prListJSON, "json", false, "Output as JSON")

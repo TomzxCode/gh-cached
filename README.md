@@ -121,7 +121,7 @@ gh-cached pr view 10 --refresh      # force fetch from GitHub and update cache
 | `-a, --assignee string` | Filter by assignee |
 | `-A, --author string` | Filter by author |
 | `-l, --label strings` | Filter by label (repeat for AND logic) |
-| `-L, --limit int` | Maximum results (default 30) |
+| `-L, --limit int` | Maximum results (default 1000) |
 | `--mention string` | Filter by mention |
 | `-m, --milestone string` | Filter by milestone number or title |
 | `-S, --search string` | Search query |
@@ -145,7 +145,7 @@ gh-cached pr view 10 --refresh      # force fetch from GitHub and update cache
 | `-d, --draft` | Show only draft PRs |
 | `-H, --head string` | Filter by head branch |
 | `-l, --label strings` | Filter by label (repeat for AND logic) |
-| `-L, --limit int` | Maximum results (default 30) |
+| `-L, --limit int` | Maximum results (default 1000) |
 | `-S, --search string` | Search query |
 | `-s, --state string` | `open` \| `closed` \| `merged` \| `all` (default `open`) |
 

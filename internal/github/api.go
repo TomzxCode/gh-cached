@@ -360,7 +360,7 @@ func (c *Client) ListIssues(owner, repo string, opts IssueListOptions) ([]*Issue
 func (c *Client) listIssuesDirect(owner, repo string, opts IssueListOptions) ([]*Issue, error) {
 	limit := opts.Limit
 	if limit <= 0 {
-		limit = 30
+		limit = 1000
 	}
 
 	filterBy := map[string]interface{}{}
@@ -435,7 +435,7 @@ func (c *Client) listIssuesDirect(owner, repo string, opts IssueListOptions) ([]
 func (c *Client) searchIssues(owner, repo string, opts IssueListOptions) ([]*Issue, error) {
 	limit := opts.Limit
 	if limit <= 0 {
-		limit = 30
+		limit = 1000
 	}
 
 	q := buildIssueSearchQuery(owner, repo, opts)
@@ -653,7 +653,7 @@ func (c *Client) ListPRs(owner, repo string, opts PRListOptions) ([]*PullRequest
 func (c *Client) listPRsDirect(owner, repo string, opts PRListOptions) ([]*PullRequest, error) {
 	limit := opts.Limit
 	if limit <= 0 {
-		limit = 30
+		limit = 1000
 	}
 
 	var prs []*PullRequest
@@ -719,7 +719,7 @@ func (c *Client) listPRsDirect(owner, repo string, opts PRListOptions) ([]*PullR
 func (c *Client) searchPRs(owner, repo string, opts PRListOptions) ([]*PullRequest, error) {
 	limit := opts.Limit
 	if limit <= 0 {
-		limit = 30
+		limit = 1000
 	}
 
 	q := buildPRSearchQuery(owner, repo, opts)
