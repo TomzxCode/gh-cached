@@ -1,4 +1,4 @@
-VERSION ?= $(shell git describe --tags --long --dirty --always)
+VERSION := $(or $(VERSION),$(shell git describe --tags --long --dirty --always))
 LDFLAGS := -s -w -X github.com/tomzxcode/gh-cached/internal/version.Version=$(VERSION)
 OUTPUT ?= gh-cached
 
