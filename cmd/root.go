@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tomzxcode/gh-cached/internal/gitremote"
+	"github.com/tomzxcode/gh-cached/internal/version"
 )
 
 var repoFlag string
@@ -13,7 +14,7 @@ var repoFlag string
 var rootCmd = &cobra.Command{
 	Use:          "gh-cached",
 	Short:        "GitHub CLI with local caching",
-	Version:      "0.1.0",
+	Version:      version.Version,
 	SilenceUsage: true,
 	SilenceErrors: true,
 	Long: `gh-cached is a GitHub CLI that caches issues, pull requests, and their comments
