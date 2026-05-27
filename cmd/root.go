@@ -14,7 +14,7 @@ var repoFlag string
 var rootCmd = &cobra.Command{
 	Use:          "gh-cached",
 	Short:        "GitHub CLI with local caching",
-	Version:      version.Version,
+	Version:      version.Get(),
 	SilenceUsage: true,
 	SilenceErrors: true,
 	Long: `gh-cached is a GitHub CLI that caches issues, pull requests, and their comments
