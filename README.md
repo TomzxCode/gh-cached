@@ -7,7 +7,7 @@ Cache lives at `~/.cache/gh-cached/<host>/<owner>/<repo>`.
 ## Installation
 
 ```bash
-go install github.com/tomzxcode/gh-cached@latest
+go install github.com/tomzxcode/gh-cached@main
 ```
 
 Or download a pre-built binary from the [releases page](https://github.com/TomzxCode/gh-cached/releases/tag/latest).
