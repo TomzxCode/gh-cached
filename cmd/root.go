@@ -5,17 +5,23 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/tomzxcode/gh-cached/internal/cache"
 	"github.com/tomzxcode/gh-cached/internal/gitremote"
+	"github.com/tomzxcode/gh-cached/internal/github"
 	"github.com/tomzxcode/gh-cached/internal/version"
 )
 
-var repoFlag string
+var (
+	repoFlag   string
+	apiURLFlag string
+	cacheDir   string
+)
 
 var rootCmd = &cobra.Command{
-	Use:          "gh-cached",
-	Short:        "GitHub CLI with local caching",
-	Version:      version.Get(),
-	SilenceUsage: true,
+	Use:           "gh-cached",
+	Short:         "GitHub CLI with local caching",
+	Version:       version.Get(),
+	SilenceUsage:  true,
 	SilenceErrors: true,
 	Long: `gh-cached is a GitHub CLI that caches issues, pull requests, and their comments
 locally to minimise API calls. The cache lives at ~/.cache/gh-cached/<host>/<owner>/<repo>.`,
@@ -31,6 +37,8 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&repoFlag, "repo", "", "Repository in [HOST/]OWNER/REPO format")
+	rootCmd.PersistentFlags().StringVar(&apiURLFlag, "api-url", "", "Override the GitHub GraphQL API endpoint URL (for testing)")
+	rootCmd.PersistentFlags().StringVar(&cacheDir, "cache-dir", "", "Override the cache directory path")
 
 	rootCmd.AddCommand(issueCmd)
 	rootCmd.AddCommand(prCmd)
@@ -45,4 +53,20 @@ func getRepo() (*gitremote.Repo, error) {
 		return gitremote.ParseRepo(repoFlag)
 	}
 	return gitremote.DetectRepo()
+}
+
+// newClient creates a GitHub client, using --api-url if provided.
+func newClient(host string) (*github.Client, error) {
+	if apiURLFlag != "" {
+		return github.NewClientWithURL(apiURLFlag, "test-token", host)
+	}
+	return github.NewClient(host)
+}
+
+// newStore creates a cache store, using --cache-dir if provided.
+func newStore() *cache.Store {
+	if cacheDir != "" {
+		return cache.NewStoreWithPath(cacheDir)
+	}
+	return cache.NewStore()
 }

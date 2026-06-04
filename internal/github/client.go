@@ -16,6 +16,7 @@ import (
 type Client struct {
 	token      string
 	host       string
+	endpointURL string
 	httpClient *http.Client
 }
 
@@ -46,6 +47,21 @@ func NewClient(host string) (*Client, error) {
 	}, nil
 }
 
+// NewClientWithURL creates a client that points at a custom GraphQL endpoint URL.
+// The host is used for cache directory separation and defaults to the URL host.
+// This is useful for testing against a mock server.
+func NewClientWithURL(endpointURL, token, host string) (*Client, error) {
+	if host == "" {
+		host = "mock"
+	}
+	return &Client{
+		token:       token,
+		host:        host,
+		endpointURL: endpointURL,
+		httpClient:  &http.Client{Timeout: 30 * time.Second},
+	}, nil
+}
+
 func resolveToken(host string) string {
 	for _, env := range []string{"GH_TOKEN", "GITHUB_TOKEN"} {
 		if t := os.Getenv(env); t != "" {
@@ -65,6 +81,9 @@ func resolveToken(host string) string {
 }
 
 func (c *Client) endpoint() string {
+	if c.endpointURL != "" {
+		return c.endpointURL
+	}
 	if c.host == "github.com" {
 		return "https://api.github.com/graphql"
 	}

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/cache"
 	"github.com/tomzxcode/gh-cached/internal/github"
 )
 
@@ -90,7 +89,7 @@ func runIssueList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	store := cache.NewStore()
+	store := newStore()
 
 	// Serve from cache when it is fresh.
 	if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
@@ -109,7 +108,7 @@ func runIssueList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Fall back to the GitHub API.
-	client, err := github.NewClient(repo.Host)
+	client, err := newClient(repo.Host)
 	if err != nil {
 		return err
 	}
@@ -145,7 +144,7 @@ func runIssueView(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	store := cache.NewStore()
+	store := newStore()
 
 	if !issueViewRefresh {
 		// When a full cache is fresh, treat it as authoritative: don't hit the API
@@ -166,7 +165,7 @@ func runIssueView(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	client, err := github.NewClient(repo.Host)
+	client, err := newClient(repo.Host)
 	if err != nil {
 		return err
 	}

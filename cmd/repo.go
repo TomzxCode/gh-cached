@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/cache"
 )
 
 var repoCmd = &cobra.Command{
@@ -25,7 +24,7 @@ func init() {
 }
 
 func runRepoList(cmd *cobra.Command, args []string) error {
-	store := cache.NewStore()
+	store := newStore()
 	repos, err := store.ListCachedRepos()
 	if err != nil {
 		return err

@@ -31,6 +31,11 @@ func NewStore() *Store {
 	return &Store{baseDir: filepath.Join(home, ".cache", "gh-cached")}
 }
 
+// NewStoreWithPath creates a Store using the given base directory.
+func NewStoreWithPath(baseDir string) *Store {
+	return &Store{baseDir: baseDir}
+}
+
 func (s *Store) repoDir(host, owner, repo string) string {
 	return filepath.Join(s.baseDir, host, owner, repo)
 }

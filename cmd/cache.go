@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/cache"
-	"github.com/tomzxcode/gh-cached/internal/github"
 )
 
 var (
@@ -34,7 +32,7 @@ func runCache(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	store := cache.NewStore()
+	store := newStore()
 
 	if !cacheForce {
 		if fresh, _ := store.IsCacheFreshWithDuration(repo.Host, repo.Owner, repo.Name, cacheDuration); fresh {
@@ -54,7 +52,7 @@ func runCache(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	client, err := github.NewClient(repo.Host)
+	client, err := newClient(repo.Host)
 	if err != nil {
 		return err
 	}
