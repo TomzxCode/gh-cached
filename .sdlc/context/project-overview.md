@@ -23,6 +23,8 @@ The tool is positioned as a lightweight alternative to `gh issue list` / `gh pr 
 - In-memory filtering of cached data (state, author, assignee, labels, milestone, search)
 - Multi-platform binary builds (darwin, linux, windows; amd64 + arm64)
 - GitHub Enterprise Server support via `[HOST/]OWNER/REPO` syntax
+- Mock GitHub GraphQL server (`mock serve` command) for testing without real API access
+- Configurable simulation generator for bulk test scenarios with time-based activity patterns
 
 **Out of scope:**
 - Creating, updating, or deleting issues or PRs (read-only)
@@ -39,11 +41,3 @@ The tool is positioned as a lightweight alternative to `gh issue list` / `gh pr 
 - GitHub API rate limits apply when cache is cold or stale
 - No pagination on comment fetching (capped at 100 comments per item in bulk cache)
 
-## Glossary
-
-| Term | Definition |
-|---|---|
-| Cache freshness | Whether the cache is within its configured duration (default 60 minutes) |
-| Delta fetch | Fetching only items updated since the last cache timestamp |
-| Full fetch | Fetching all items regardless of cache state, triggered by `--force` |
-| Cache info | Metadata file (`.cache_info.json`) tracking when the full cache was last populated and its validity duration |

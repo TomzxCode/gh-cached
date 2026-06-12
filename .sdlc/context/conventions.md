@@ -18,12 +18,14 @@
 │   ├── issue.go             # issue list, issue view
 │   ├── pr.go                # pr list, pr view
 │   ├── cache.go             # cache command
+│   ├── mock.go              # mock serve command
 │   ├── repo.go              # repo list command
 │   └── *_test.go            # Tests co-located with commands
 ├── internal/                # Private packages
 │   ├── cache/               # Cache store (disk I/O)
 │   ├── github/              # GitHub API client
 │   ├── gitremote/           # Git remote detection
+│   ├── mockserver/          # Mock GraphQL server, scenario builder, simulation
 │   └── version/             # Version resolution
 ├── .github/workflows/       # CI configuration
 ├── .agents/skills/          # Agent skill definitions

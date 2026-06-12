@@ -22,10 +22,11 @@ The tool is a single Go binary with four layers: CLI commands, business logic (f
 
 | Component | Responsibility | Technology |
 |---|---|---|
-| `cmd/` (root, issue, pr, cache, repo) | CLI interface, flag parsing, command handlers | cobra |
+| `cmd/` (root, issue, pr, cache, repo, mock) | CLI interface, flag parsing, command handlers | cobra |
 | `internal/cache/` | On-disk JSON cache read/write, freshness checks | Go standard library |
 | `internal/github/` | GitHub GraphQL API client, query building, response parsing | Go net/http |
 | `internal/gitremote/` | Git remote URL detection and parsing | Go os/exec |
+| `internal/mockserver/` | In-process mock GitHub GraphQL server, scenario builder, simulation generator | Go net/http/httptest |
 | `internal/version/` | Build version resolution from ldflags or Go build info | Go runtime/debug |
 
 ## Data Flow
@@ -43,8 +44,9 @@ The tool is a single Go binary with four layers: CLI commands, business logic (f
   - Builds for 4 platforms: darwin-amd64, darwin-arm64, linux-amd64, windows-amd64
   - On push to main: creates/updates a `latest` prerelease with all binaries
 - **Distribution:** `go install` from source, or pre-built binaries from GitHub Releases
+- **Testing:** Mock server (`internal/mockserver`) provides an `httptest.Server` that mirrors the GitHub GraphQL API contract for integration tests without network access
 - **No observability:** The tool is a CLI with no runtime metrics, logging, or tracing
-- **No hosting:** Fully client-side, no server component
+- **No hosting:** Fully client-side, no server component (mock server is for testing only)
 
 ## Architecture Decisions
 
@@ -52,3 +54,5 @@ The tool is a single Go binary with four layers: CLI commands, business logic (f
 - File-per-item cache layout (`issues/42.json`, `prs/10.json`) for efficient individual lookups
 - Token resolution chain: `GH_TOKEN` > `GITHUB_TOKEN` > `gh auth token`
 - Authoritative cache mode: when full cache is fresh, `view` commands serve from cache without API fallback
+- Mock server uses `httptest.Server` with route-based query matching (string contains) for simplicity
+- Simulation generator uses an event-based timeline with weighted time sampling for realistic activity bursts
