@@ -1,2 +1,5 @@
 gh-cached
 !.agents/skills/gh-cached/
+site/
+.venv/
+__pycache__/
