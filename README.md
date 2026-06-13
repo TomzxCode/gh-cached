@@ -261,3 +261,7 @@ alice/another-repo        10      3    1d          stale
 | `-c, --comments` | Show comments |
 | `--json` | Output as JSON |
 | `--refresh` | Force fetch from GitHub and update cache |
+
+## Related projects
+
+- [gitcrawl](https://github.com/openclaw/gitcrawl)
