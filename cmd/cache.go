@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"time"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -62,10 +65,12 @@ func runCache(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Printf("Caching issues for %s/%s...\n", repo.Owner, repo.Name)
 	}
-	issues, err := client.FetchAllIssues(repo.Owner, repo.Name, since)
+	tracker := newProgressTracker("issues")
+	issues, err := client.FetchAllIssues(repo.Owner, repo.Name, since, tracker.update)
 	if err != nil {
 		return fmt.Errorf("fetching issues: %w", err)
 	}
+	tracker.done()
 	for _, issue := range issues {
 		if err := store.SaveIssue(repo.Host, repo.Owner, repo.Name, issue); err != nil {
 			return fmt.Errorf("saving issue #%d: %w", issue.Number, err)
@@ -78,10 +83,12 @@ func runCache(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Printf("Caching pull requests for %s/%s...\n", repo.Owner, repo.Name)
 	}
-	prs, err := client.FetchAllPRs(repo.Owner, repo.Name, since)
+	tracker = newProgressTracker("pull requests")
+	prs, err := client.FetchAllPRs(repo.Owner, repo.Name, since, tracker.update)
 	if err != nil {
 		return fmt.Errorf("fetching pull requests: %w", err)
 	}
+	tracker.done()
 	for _, pr := range prs {
 		if err := store.SavePR(repo.Host, repo.Owner, repo.Name, pr); err != nil {
 			return fmt.Errorf("saving PR #%d: %w", pr.Number, err)
@@ -95,4 +102,65 @@ func runCache(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Cache updated. Valid for %d minute(s).\n", cacheDuration)
 	return nil
+}
+
+// progressTracker adapts github.ProgressFunc callbacks onto a schollz
+// progress bar. The bar is created lazily on the first update so it can adopt
+// the server-reported total (determinate bar) or fall back to a spinner when
+// the total is unknown (indeterminate PR delta scans).
+type progressTracker struct {
+	label  string
+	writer io.Writer
+	bar    *progressbar.ProgressBar
+	maxSet bool
+}
+
+func newProgressTracker(label string) *progressTracker {
+	return &progressTracker{label: label, writer: progressWriter()}
+}
+
+// update implements github.ProgressFunc.
+func (t *progressTracker) update(current, total int) {
+	if t.bar == nil {
+		max := -1 // -1 selects spinner mode for an unknown length
+		if total > 0 {
+			max = total
+		}
+		t.bar = progressbar.NewOptions(max,
+			progressbar.OptionSetDescription(t.label),
+			progressbar.OptionSetWriter(t.writer),
+			progressbar.OptionShowCount(),
+			progressbar.OptionSetWidth(30),
+			progressbar.OptionSetPredictTime(false),
+			progressbar.OptionThrottle(50*time.Millisecond),
+		)
+	} else if total > 0 && !t.maxSet {
+		t.bar.ChangeMax(total)
+		t.maxSet = true
+	}
+	if total > 0 {
+		t.maxSet = true
+	}
+	t.bar.Set(current)
+}
+
+// done finalises the bar: fills a determinate bar if it did not naturally
+// complete, then emits a trailing newline.
+func (t *progressTracker) done() {
+	if t.bar == nil {
+		return
+	}
+	if !t.bar.IsFinished() && t.bar.GetMax() > 0 {
+		t.bar.Finish()
+	}
+	fmt.Fprintln(t.writer)
+}
+
+// progressWriter returns os.Stderr when it is a terminal device, otherwise
+// io.Discard so progress bars never clutter captured or piped output.
+func progressWriter() io.Writer {
+	if fi, err := os.Stderr.Stat(); err == nil && fi.Mode()&os.ModeCharDevice != 0 {
+		return os.Stderr
+	}
+	return io.Discard
 }

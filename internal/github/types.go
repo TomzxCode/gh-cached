@@ -69,3 +69,8 @@ type Milestone struct {
 	Number int    `json:"number"`
 	Title  string `json:"title"`
 }
+
+// ProgressFunc reports progress for long-running fetches.
+// current is the number of items fetched so far; total is the expected count
+// (0 when unknown). It is invoked after each page of results is fetched.
+type ProgressFunc func(current, total int)

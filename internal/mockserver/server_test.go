@@ -328,6 +328,7 @@ func TestFetchAllIssues(t *testing.T) {
 	query($owner: String!, $repo: String!, $after: String, $since: DateTime) {
 	  repository(owner: $owner, name: $repo) {
 	    issues(first: 100, states: [OPEN, CLOSED], filterBy: {since: $since}, after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
+	      totalCount
 	      pageInfo { hasNextPage endCursor }
 	      nodes {
 	        number title state
@@ -351,7 +352,8 @@ func TestFetchAllIssues(t *testing.T) {
 	var result struct {
 		Repository struct {
 			Issues struct {
-				Nodes []struct {
+				TotalCount int `json:"totalCount"`
+				Nodes      []struct {
 					Number   int    `json:"number"`
 					Comments struct {
 						TotalCount int `json:"totalCount"`
@@ -362,6 +364,10 @@ func TestFetchAllIssues(t *testing.T) {
 	}
 	if err := json.Unmarshal(raw, &result); err != nil {
 		t.Fatalf("parse: %v", err)
+	}
+
+	if result.Repository.Issues.TotalCount != 3 {
+		t.Errorf("issues totalCount = %d, want 3", result.Repository.Issues.TotalCount)
 	}
 
 	if len(result.Repository.Issues.Nodes) != 3 {
@@ -626,6 +632,7 @@ func TestFetchAllPRs(t *testing.T) {
 	query($owner: String!, $repo: String!, $after: String) {
 	  repository(owner: $owner, name: $repo) {
 	    pullRequests(first: 100, states: [OPEN, CLOSED, MERGED], after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
+	      totalCount
 	      pageInfo { hasNextPage }
 	      nodes {
 	        number title state isDraft
@@ -649,7 +656,8 @@ func TestFetchAllPRs(t *testing.T) {
 	var result struct {
 		Repository struct {
 			PullRequests struct {
-				Nodes []struct {
+				TotalCount int `json:"totalCount"`
+				Nodes      []struct {
 					Number   int    `json:"number"`
 					State    string `json:"state"`
 					Comments struct {
@@ -660,6 +668,10 @@ func TestFetchAllPRs(t *testing.T) {
 		} `json:"repository"`
 	}
 	json.Unmarshal(raw, &result)
+
+	if result.Repository.PullRequests.TotalCount != 3 {
+		t.Errorf("pullRequests totalCount = %d, want 3", result.Repository.PullRequests.TotalCount)
+	}
 
 	if len(result.Repository.PullRequests.Nodes) != 3 {
 		t.Errorf("got %d PRs, want 3", len(result.Repository.PullRequests.Nodes))

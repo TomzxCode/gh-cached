@@ -10,6 +10,7 @@ status: draft
 The cache command fetches all issues and PRs (with comments) from GitHub via GraphQL, writing each as a separate JSON file.
 Cache metadata tracks the last fetch timestamp and configured duration.
 Delta fetches use the `since` parameter on issues and client-side timestamp comparison on PRs to only fetch updated items.
+A progress bar (`schollz/progressbar/v3`) renders to stderr during each fetch, driven by the GraphQL connection `totalCount`; it is suppressed when stderr is not a terminal.
 
 ## Architecture
 
@@ -82,6 +83,7 @@ cache command ──► LoadCacheInfo() ──► get cachedAt timestamp
 | One file per item | Individual JSON files | Efficient for single-item lookups without loading all data |
 | Delta via `since` param | Issues use GraphQL `since` filter | Server-side filtering reduces data transfer |
 | Delta via client-side comparison | PRs check `updatedAt` client-side | No `since` filter available on PR GraphQL connection |
+| Progress via `totalCount` | Determinate bar for full fetches and issue deltas; spinner for PR deltas | Issues' `totalCount` is accurate (server-filtered); PR `totalCount` counts all PRs so a spinner is shown during delta scans |
 | No cache eviction | Let cache grow | Simplicity; disk usage is typically small |
 
 ## Risks and Unknowns

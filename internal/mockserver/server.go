@@ -295,8 +295,9 @@ func (s *Server) paginateNodes(indices []int, pageSize int, toNode func(int) int
 	return map[string]interface{}{
 		"repository": map[string]interface{}{
 			"issues": map[string]interface{}{
-				"pageInfo": pageInfo{HasNextPage: hasNext, EndCursor: nextCursor},
-				"nodes":    nodes,
+				"totalCount": len(indices),
+				"pageInfo":   pageInfo{HasNextPage: hasNext, EndCursor: nextCursor},
+				"nodes":      nodes,
 			},
 		},
 	}
@@ -323,8 +324,9 @@ func (s *Server) paginatePRs(indices []int, pageSize int) interface{} {
 	return map[string]interface{}{
 		"repository": map[string]interface{}{
 			"pullRequests": map[string]interface{}{
-				"pageInfo": pageInfo{HasNextPage: hasNext, EndCursor: nextCursor},
-				"nodes":    nodes,
+				"totalCount": len(indices),
+				"pageInfo":   pageInfo{HasNextPage: hasNext, EndCursor: nextCursor},
+				"nodes":      nodes,
 			},
 		},
 	}
@@ -351,8 +353,9 @@ func (s *Server) paginatePRsFull(indices []int, pageSize int) interface{} {
 	return map[string]interface{}{
 		"repository": map[string]interface{}{
 			"pullRequests": map[string]interface{}{
-				"pageInfo": pageInfo{HasNextPage: hasNext, EndCursor: nextCursor},
-				"nodes":    nodes,
+				"totalCount": len(indices),
+				"pageInfo":   pageInfo{HasNextPage: hasNext, EndCursor: nextCursor},
+				"nodes":      nodes,
 			},
 		},
 	}

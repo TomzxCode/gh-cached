@@ -332,6 +332,7 @@ const fetchAllIssuesQuery = `
 query($owner: String!, $repo: String!, $after: String, $since: DateTime) {
   repository(owner: $owner, name: $repo) {
     issues(first: 100, states: [OPEN, CLOSED], filterBy: {since: $since}, after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
+      totalCount
       pageInfo { hasNextPage endCursor }
       nodes {
         number title state
@@ -514,9 +515,12 @@ func (c *Client) GetIssue(owner, repo string, number int) (*Issue, error) {
 
 // FetchAllIssues retrieves every issue (all states) with comments for caching.
 // If since is non-nil, only issues updated at or after that time are fetched (delta update).
-func (c *Client) FetchAllIssues(owner, repo string, since *time.Time) ([]*Issue, error) {
+// progress (optional) is invoked after each page with the running count and the
+// server-reported total.
+func (c *Client) FetchAllIssues(owner, repo string, since *time.Time, progress ProgressFunc) ([]*Issue, error) {
 	var issues []*Issue
 	var cursor string
+	total := 0
 
 	for {
 		vars := map[string]interface{}{
@@ -533,7 +537,8 @@ func (c *Client) FetchAllIssues(owner, repo string, since *time.Time) ([]*Issue,
 		var result struct {
 			Repository struct {
 				Issues struct {
-					PageInfo struct {
+					TotalCount int `json:"totalCount"`
+					PageInfo   struct {
 						HasNextPage bool   `json:"hasNextPage"`
 						EndCursor   string `json:"endCursor"`
 					} `json:"pageInfo"`
@@ -546,8 +551,16 @@ func (c *Client) FetchAllIssues(owner, repo string, since *time.Time) ([]*Issue,
 			return nil, err
 		}
 
+		if total == 0 {
+			total = result.Repository.Issues.TotalCount
+		}
+
 		for i := range result.Repository.Issues.Nodes {
 			issues = append(issues, nodeToIssue(&result.Repository.Issues.Nodes[i]))
+		}
+
+		if progress != nil {
+			progress(len(issues), total)
 		}
 
 		if !result.Repository.Issues.PageInfo.HasNextPage {
@@ -624,6 +637,7 @@ const fetchAllPRsQuery = `
 query($owner: String!, $repo: String!, $after: String) {
   repository(owner: $owner, name: $repo) {
     pullRequests(first: 100, states: [OPEN, CLOSED, MERGED], after: $after, orderBy: {field: UPDATED_AT, direction: DESC}) {
+      totalCount
       pageInfo { hasNextPage endCursor }
       nodes {
         number title state isDraft reviewDecision
@@ -798,9 +812,13 @@ func (c *Client) GetPR(owner, repo string, number int) (*PullRequest, error) {
 
 // FetchAllPRs retrieves every pull request (all states) with comments for caching.
 // If since is non-nil, pagination stops early once a PR updated before that time is seen.
-func (c *Client) FetchAllPRs(owner, repo string, since *time.Time) ([]*PullRequest, error) {
+// progress (optional) is invoked after each page. In a delta fetch (since != nil) the
+// reported total is 0 (unknown) because the server's totalCount counts all PRs, not
+// just updated ones; in a full fetch the real server-reported total is used.
+func (c *Client) FetchAllPRs(owner, repo string, since *time.Time, progress ProgressFunc) ([]*PullRequest, error) {
 	var prs []*PullRequest
 	var cursor string
+	total := 0
 
 	for {
 		vars := map[string]interface{}{
@@ -814,7 +832,8 @@ func (c *Client) FetchAllPRs(owner, repo string, since *time.Time) ([]*PullReque
 		var result struct {
 			Repository struct {
 				PullRequests struct {
-					PageInfo struct {
+					TotalCount int `json:"totalCount"`
+					PageInfo   struct {
 						HasNextPage bool   `json:"hasNextPage"`
 						EndCursor   string `json:"endCursor"`
 					} `json:"pageInfo"`
@@ -827,6 +846,10 @@ func (c *Client) FetchAllPRs(owner, repo string, since *time.Time) ([]*PullReque
 			return nil, err
 		}
 
+		if total == 0 {
+			total = result.Repository.PullRequests.TotalCount
+		}
+
 		done := false
 		for i := range result.Repository.PullRequests.Nodes {
 			n := &result.Repository.PullRequests.Nodes[i]
@@ -835,6 +858,16 @@ func (c *Client) FetchAllPRs(owner, repo string, since *time.Time) ([]*PullReque
 				break
 			}
 			prs = append(prs, nodeToPR(n))
+		}
+
+		if progress != nil {
+			// Delta scans cannot produce a meaningful total (server counts all PRs),
+			// so report 0 to signal an indeterminate progress indicator.
+			progressTotal := total
+			if since != nil {
+				progressTotal = 0
+			}
+			progress(len(prs), progressTotal)
 		}
 
 		if done || !result.Repository.PullRequests.PageInfo.HasNextPage {

@@ -36,7 +36,7 @@
 
 ## Coding Standards
 
-- Use Go standard library where possible; only external dependency is `spf13/cobra`
+- Use Go standard library where possible; external dependencies are limited to `spf13/cobra` (CLI), `schollz/progressbar/v3` (cache progress bar), and `gopkg.in/yaml.v3`
 - All exported types and functions have godoc comments
 - Error wrapping with `fmt.Errorf("context: %w", err)` for error chains
 - CLI flags use both short and long forms where conventional (e.g. `-s, --state`)

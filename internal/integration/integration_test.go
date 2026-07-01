@@ -63,7 +63,7 @@ func TestClient_FetchAllIssues(t *testing.T) {
 		t.Fatalf("NewClientWithURL: %v", err)
 	}
 
-	issues, err := client.FetchAllIssues("acme", "myproject", nil)
+	issues, err := client.FetchAllIssues("acme", "myproject", nil, nil)
 	if err != nil {
 		t.Fatalf("FetchAllIssues: %v", err)
 	}
@@ -89,12 +89,80 @@ func TestClient_FetchAllPRs(t *testing.T) {
 		t.Fatalf("NewClientWithURL: %v", err)
 	}
 
-	prs, err := client.FetchAllPRs("acme", "myproject", nil)
+	prs, err := client.FetchAllPRs("acme", "myproject", nil, nil)
 	if err != nil {
 		t.Fatalf("FetchAllPRs: %v", err)
 	}
 	if len(prs) != 3 {
 		t.Errorf("got %d PRs, want 3", len(prs))
+	}
+}
+
+func TestClient_FetchAllIssues_ProgressCallback(t *testing.T) {
+	srv := startServer(t, sampleScenario())
+
+	client, err := github.NewClientWithURL(srv.URL(), "test-token", "mock")
+	if err != nil {
+		t.Fatalf("NewClientWithURL: %v", err)
+	}
+
+	var lastCurrent, lastTotal int
+	calls := 0
+	cb := func(current, total int) {
+		lastCurrent = current
+		lastTotal = total
+		calls++
+	}
+
+	issues, err := client.FetchAllIssues("acme", "myproject", nil, cb)
+	if err != nil {
+		t.Fatalf("FetchAllIssues: %v", err)
+	}
+	if len(issues) != 5 {
+		t.Fatalf("got %d issues, want 5", len(issues))
+	}
+	if calls == 0 {
+		t.Fatal("progress callback was never invoked")
+	}
+	if lastTotal != 5 {
+		t.Errorf("last total = %d, want 5", lastTotal)
+	}
+	if lastCurrent != 5 {
+		t.Errorf("last current = %d, want 5", lastCurrent)
+	}
+}
+
+func TestClient_FetchAllPRs_ProgressCallback(t *testing.T) {
+	srv := startServer(t, sampleScenario())
+
+	client, err := github.NewClientWithURL(srv.URL(), "test-token", "mock")
+	if err != nil {
+		t.Fatalf("NewClientWithURL: %v", err)
+	}
+
+	var lastCurrent, lastTotal int
+	calls := 0
+	cb := func(current, total int) {
+		lastCurrent = current
+		lastTotal = total
+		calls++
+	}
+
+	prs, err := client.FetchAllPRs("acme", "myproject", nil, cb)
+	if err != nil {
+		t.Fatalf("FetchAllPRs: %v", err)
+	}
+	if len(prs) != 3 {
+		t.Fatalf("got %d PRs, want 3", len(prs))
+	}
+	if calls == 0 {
+		t.Fatal("progress callback was never invoked")
+	}
+	if lastTotal != 3 {
+		t.Errorf("last total = %d, want 3", lastTotal)
+	}
+	if lastCurrent != 3 {
+		t.Errorf("last current = %d, want 3", lastCurrent)
 	}
 }
 
@@ -212,7 +280,7 @@ func TestClient_DeltaFetch(t *testing.T) {
 	}
 
 	since := time.Now().Add(-1 * time.Hour)
-	issues, err := client.FetchAllIssues("acme", "testrepo", &since)
+	issues, err := client.FetchAllIssues("acme", "testrepo", &since, nil)
 	if err != nil {
 		t.Fatalf("FetchAllIssues with since: %v", err)
 	}
@@ -234,7 +302,7 @@ func TestClient_FetchAndCache(t *testing.T) {
 
 	store := cache.NewStoreWithPath(t.TempDir())
 
-	issues, err := client.FetchAllIssues("acme", "myproject", nil)
+	issues, err := client.FetchAllIssues("acme", "myproject", nil, nil)
 	if err != nil {
 		t.Fatalf("FetchAllIssues: %v", err)
 	}
@@ -244,7 +312,7 @@ func TestClient_FetchAndCache(t *testing.T) {
 		}
 	}
 
-	prs, err := client.FetchAllPRs("acme", "myproject", nil)
+	prs, err := client.FetchAllPRs("acme", "myproject", nil, nil)
 	if err != nil {
 		t.Fatalf("FetchAllPRs: %v", err)
 	}
@@ -321,7 +389,7 @@ func TestClient_GenerateLargeAndFetch(t *testing.T) {
 		t.Fatalf("NewClientWithURL: %v", err)
 	}
 
-	issues, err := client.FetchAllIssues("acme", "testrepo", nil)
+	issues, err := client.FetchAllIssues("acme", "testrepo", nil, nil)
 	if err != nil {
 		t.Fatalf("FetchAllIssues: %v", err)
 	}
@@ -329,7 +397,7 @@ func TestClient_GenerateLargeAndFetch(t *testing.T) {
 		t.Errorf("got %d issues, want 20", len(issues))
 	}
 
-	prs, err := client.FetchAllPRs("acme", "testrepo", nil)
+	prs, err := client.FetchAllPRs("acme", "testrepo", nil, nil)
 	if err != nil {
 		t.Fatalf("FetchAllPRs: %v", err)
 	}
