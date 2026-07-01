@@ -2,8 +2,8 @@
 name: mock-server
 description: >
   Spin up an in-process mock GitHub GraphQL server with configurable scenarios
-  for testing gh-cached without hitting the real GitHub API. Trigger when the
-  user wants to test gh-cached, write integration tests, or simulate GitHub
+  for testing ghx without hitting the real GitHub API. Trigger when the
+  user wants to test ghx, write integration tests, or simulate GitHub
   activity over time.
 ---
 
@@ -66,7 +66,7 @@ There are three approaches, from simple to full-featured.
 Best for: small, specific test cases with known titles and numbers.
 
 ```go
-import "github.com/tomzxcode/gh-cached/internal/mockserver"
+import "github.com/tomzxcode/ghx/internal/mockserver"
 
 scenario := mockserver.NewScenarioBuilder("acme", "myproject").
     WithSeed(42).
@@ -209,7 +209,7 @@ prs, _     := client.ListPRs("acme", "myproject", github.PRListOptions{State: "m
 store := cache.NewStoreWithPath(t.TempDir())
 ```
 
-`NewStoreWithPath` avoids polluting `~/.cache/gh-cached` during tests.
+`NewStoreWithPath` avoids polluting `~/.cache/ghx/cache` during tests.
 
 ### 5. Evolve the scenario at runtime (optional)
 
@@ -235,16 +235,16 @@ the new data.
 
 ### 6. CLI usage (end-to-end testing)
 
-The `gh-cached` binary supports `--api-url` and `--cache-dir` flags:
+The `ghx` binary supports `--api-url` and `--cache-dir` flags:
 
 ```bash
 # In one terminal (or via Go test):
 #   Start mock server, print its URL
 
 # In another terminal:
-gh-cached --api-url http://127.0.0.1:XXXXX --cache-dir /tmp/test-cache --repo acme/myproject cache
-gh-cached --api-url http://127.0.0.1:XXXXX --cache-dir /tmp/test-cache --repo acme/myproject issue list --state all
-gh-cached --api-url http://127.0.0.1:XXXXX --cache-dir /tmp/test-cache --repo acme/myproject pr list --json
+ghx --api-url http://127.0.0.1:XXXXX --cache-dir /tmp/test-cache --repo acme/myproject cache
+ghx --api-url http://127.0.0.1:XXXXX --cache-dir /tmp/test-cache --repo acme/myproject issue list --state all
+ghx --api-url http://127.0.0.1:XXXXX --cache-dir /tmp/test-cache --repo acme/myproject pr list --json
 ```
 
 ---
@@ -277,9 +277,9 @@ import (
     "testing"
     "time"
 
-    "github.com/tomzxcode/gh-cached/internal/cache"
-    "github.com/tomzxcode/gh-cached/internal/github"
-    "github.com/tomzxcode/gh-cached/internal/mockserver"
+    "github.com/tomzxcode/ghx/internal/cache"
+    "github.com/tomzxcode/ghx/internal/github"
+    "github.com/tomzxcode/ghx/internal/mockserver"
 )
 
 func TestEndToEnd(t *testing.T) {

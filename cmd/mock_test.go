@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/mockserver"
+	"github.com/tomzxcode/ghx/internal/mockserver"
 )
 
 func TestBuildSimConfig_DefaultPreset(t *testing.T) {

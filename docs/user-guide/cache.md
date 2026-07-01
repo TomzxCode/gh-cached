@@ -1,11 +1,11 @@
 # Cache
 
-gh-cached caches GitHub data as individual JSON files on your local disk. After an initial fetch, subsequent commands serve results from cache without hitting the API.
+ghx caches GitHub data as individual JSON files on your local disk. After an initial fetch, subsequent commands serve results from cache without hitting the API.
 
 ## Cache location
 
 ```
-~/.cache/gh-cached/<host>/<owner>/<repo>/
+~/.cache/ghx/cache/<host>/<owner>/<repo>/
 ├── .cache_info.json
 ├── issues/
 │   ├── 1.json
@@ -20,17 +20,17 @@ gh-cached caches GitHub data as individual JSON files on your local disk. After 
 Override the base directory with `--cache-dir`:
 
 ```bash
-gh-cached --cache-dir /tmp/gh-cache cache --repo cli/cli
+ghx --cache-dir /tmp/gh-cache cache --repo cli/cli
 ```
 
 ## Populate the cache
 
 ```bash
-gh-cached cache
-gh-cached cache --repo cli/cli
-gh-cached cache --cache-duration 120   # treat cache as fresh for 2 hours
-gh-cached cache --cache-duration 0     # always re-fetch (delta)
-gh-cached cache --force                # force full re-fetch
+ghx cache
+ghx cache --repo cli/cli
+ghx cache --cache-duration 120   # treat cache as fresh for 2 hours
+ghx cache --cache-duration 0     # always re-fetch (delta)
+ghx cache --force                # force full re-fetch
 ```
 
 First run fetches everything. Example output:
@@ -78,6 +78,6 @@ When the cache is fresh, `list` and `view` commands serve entirely from disk wit
 
 ## Notes
 
-- Cache files are never automatically cleaned up. Delete directories under `~/.cache/gh-cached/` to free space.
+- Cache files are never automatically cleaned up. Delete directories under `~/.cache/ghx/cache/` to free space.
 - The `--mention` and `--app` filters cannot be evaluated from cached data and are silently skipped when serving from cache.
 - Bulk cache operations fetch up to 100 comments per item.

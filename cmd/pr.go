@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/github"
+	"github.com/tomzxcode/ghx/internal/github"
 )
 
 // ---------------------------------------------------------------------------
@@ -154,7 +154,7 @@ func runPRView(cmd *cobra.Command, args []string) error {
 		if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
 			pr, _, err := store.LoadPR(repo.Host, repo.Owner, repo.Name, number)
 			if err != nil {
-				return fmt.Errorf("pull request #%d not found in cache; run `gh-cached cache --force` to refresh", number)
+				return fmt.Errorf("pull request #%d not found in cache; run `ghx cache --force` to refresh", number)
 			}
 			return printPRView(pr, prViewComments, prViewJSON)
 		}

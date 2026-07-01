@@ -1,6 +1,6 @@
 package mockserver
 
-import "github.com/tomzxcode/gh-cached/internal/github"
+import "github.com/tomzxcode/ghx/internal/github"
 
 type ScenarioIssue struct {
 	Owner string

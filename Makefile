@@ -1,11 +1,19 @@
 VERSION := $(or $(VERSION),$(shell git describe --tags --long --dirty --always))
-LDFLAGS := -s -w -X github.com/tomzxcode/gh-cached/internal/version.version=$(VERSION)
-OUTPUT ?= gh-cached
+LDFLAGS := -s -w -X github.com/tomzxcode/ghx/internal/version.version=$(VERSION)
+OUTPUT ?= ghx
+PREFIX ?= /usr/local
 
-.PHONY: build clean
+.PHONY: build clean install uninstall
 
 build:
 	go build -trimpath -ldflags="$(LDFLAGS)" -o $(OUTPUT) .
 
 clean:
 	rm -f $(OUTPUT)
+
+install: build
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -m 0755 $(OUTPUT) $(DESTDIR)$(PREFIX)/bin/$(OUTPUT)
+
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/$(OUTPUT)

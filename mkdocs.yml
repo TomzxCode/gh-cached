@@ -1,8 +1,8 @@
-site_name: gh-cached Documentation
-site_description: Documentation for gh-cached, a GitHub CLI with disk-based caching
-site_url: https://tomzxcode.github.io/gh-cached
-repo_name: TomzxCode/gh-cached
-repo_url: https://github.com/TomzxCode/gh-cached
+site_name: ghx Documentation
+site_description: Documentation for ghx, a GitHub CLI with disk-based caching
+site_url: https://tomzxcode.github.io/ghx
+repo_name: TomzxCode/ghx
+repo_url: https://github.com/TomzxCode/ghx
 edit_uri: edit/main/docs/
 
 theme:
@@ -89,4 +89,4 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/TomzxCode/gh-cached
+      link: https://github.com/TomzxCode/ghx

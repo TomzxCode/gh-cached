@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/github"
+	"github.com/tomzxcode/ghx/internal/github"
 )
 
 // ---------------------------------------------------------------------------
@@ -43,6 +43,7 @@ var (
 	issueViewComments bool
 	issueViewJSON     bool
 	issueViewRefresh  bool
+	issueViewIDs      bool
 )
 
 var issueListCmd = &cobra.Command{
@@ -77,6 +78,7 @@ func init() {
 	issueViewCmd.Flags().BoolVarP(&issueViewComments, "comments", "c", false, "View issue comments")
 	issueViewCmd.Flags().BoolVar(&issueViewJSON, "json", false, "Output as JSON")
 	issueViewCmd.Flags().BoolVar(&issueViewRefresh, "refresh", false, "Force fetch from GitHub and update cache")
+	issueViewCmd.Flags().BoolVar(&issueViewIDs, "ids", false, "Show comment IDs (useful for editing/deleting)")
 }
 
 // ---------------------------------------------------------------------------
@@ -152,15 +154,15 @@ func runIssueView(cmd *cobra.Command, args []string) error {
 		if fresh, _ := store.IsCacheFresh(repo.Host, repo.Owner, repo.Name); fresh {
 			issue, _, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number)
 			if err != nil {
-				return fmt.Errorf("issue #%d not found in cache; run `gh-cached cache --force` to refresh", number)
+				return fmt.Errorf("issue #%d not found in cache; run `ghx cache --force` to refresh", number)
 			}
-			return printIssueView(issue, issueViewComments, issueViewJSON)
+			return printIssueView(issue, issueViewComments, issueViewJSON, issueViewIDs)
 		}
 
 		// No fresh full cache — try the individual file, then fall back to the API.
 		if issue, mtime, err := store.LoadIssue(repo.Host, repo.Owner, repo.Name, number); err == nil {
 			if time.Since(mtime) < 60*time.Minute {
-				return printIssueView(issue, issueViewComments, issueViewJSON)
+				return printIssueView(issue, issueViewComments, issueViewJSON, issueViewIDs)
 			}
 		}
 	}
@@ -176,7 +178,7 @@ func runIssueView(cmd *cobra.Command, args []string) error {
 	}
 
 	_ = store.SaveIssue(repo.Host, repo.Owner, repo.Name, issue)
-	return printIssueView(issue, issueViewComments, issueViewJSON)
+	return printIssueView(issue, issueViewComments, issueViewJSON, issueViewIDs)
 }
 
 // ---------------------------------------------------------------------------
@@ -296,7 +298,7 @@ func printIssueList(issues []*github.Issue, total int, asJSON bool, noTruncate b
 	return nil
 }
 
-func printIssueView(issue *github.Issue, showComments bool, asJSON bool) error {
+func printIssueView(issue *github.Issue, showComments bool, asJSON bool, showIDs bool) error {
 	if asJSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
@@ -336,8 +338,13 @@ func printIssueView(issue *github.Issue, showComments bool, asJSON bool) error {
 
 	if showComments && len(issue.Comments) > 0 {
 		for i, c := range issue.Comments {
-			fmt.Printf("\n── Comment %d by %s (%s) ──\n\n",
-				i+1, c.Author.Login, c.CreatedAt.Format("2006-01-02 15:04"))
+			if showIDs && c.ID != "" {
+				fmt.Printf("\n── Comment %d by %s (%s) [%s] ──\n\n",
+					i+1, c.Author.Login, c.CreatedAt.Format("2006-01-02 15:04"), c.ID)
+			} else {
+				fmt.Printf("\n── Comment %d by %s (%s) ──\n\n",
+					i+1, c.Author.Login, c.CreatedAt.Format("2006-01-02 15:04"))
+			}
 			fmt.Println(c.Body)
 		}
 	}

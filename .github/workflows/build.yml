@@ -15,16 +15,16 @@ jobs:
         include:
           - goos: darwin
             goarch: amd64
-            artifact: gh-cached-darwin-amd64
+            artifact: ghx-darwin-amd64
           - goos: darwin
             goarch: arm64
-            artifact: gh-cached-darwin-arm64
+            artifact: ghx-darwin-arm64
           - goos: linux
             goarch: amd64
-            artifact: gh-cached-linux-amd64
+            artifact: ghx-linux-amd64
           - goos: windows
             goarch: amd64
-            artifact: gh-cached-windows-amd64.exe
+            artifact: ghx-windows-amd64.exe
 
     steps:
       - uses: actions/checkout@v6
@@ -78,7 +78,7 @@ jobs:
             --title "Latest" \
             --notes "Latest build from \`main\` — commit ${{ github.sha }}" \
             --prerelease \
-            gh-cached-darwin-amd64 \
-            gh-cached-darwin-arm64 \
-            gh-cached-linux-amd64 \
-            gh-cached-windows-amd64.exe
+            ghx-darwin-amd64 \
+            ghx-darwin-arm64 \
+            ghx-linux-amd64 \
+            ghx-windows-amd64.exe

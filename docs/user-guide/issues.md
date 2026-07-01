@@ -3,7 +3,7 @@
 ## List issues
 
 ```bash
-gh-cached issue list
+ghx issue list
 ```
 
 When the cache is fresh, results are served from disk. Otherwise the GitHub API is used.
@@ -11,17 +11,17 @@ When the cache is fresh, results are served from disk. Otherwise the GitHub API 
 ### Filter by state
 
 ```bash
-gh-cached issue list                    # open (default)
-gh-cached issue list --state closed
-gh-cached issue list --state all
+ghx issue list                    # open (default)
+ghx issue list --state closed
+ghx issue list --state all
 ```
 
 ### Filter by author, assignee, or mention
 
 ```bash
-gh-cached issue list --author alice
-gh-cached issue list --assignee bob
-gh-cached issue list --mention carol
+ghx issue list --author alice
+ghx issue list --assignee bob
+ghx issue list --mention carol
 ```
 
 ### Filter by label
@@ -29,8 +29,8 @@ gh-cached issue list --mention carol
 Labels use AND logic. Repeat the flag to require all specified labels:
 
 ```bash
-gh-cached issue list --label bug
-gh-cached issue list --label bug --label p1
+ghx issue list --label bug
+ghx issue list --label bug --label p1
 ```
 
 ### Filter by milestone
@@ -38,8 +38,8 @@ gh-cached issue list --label bug --label p1
 Accepts a milestone title (case-insensitive) or number:
 
 ```bash
-gh-cached issue list --milestone v2.0
-gh-cached issue list --milestone 5
+ghx issue list --milestone v2.0
+ghx issue list --milestone 5
 ```
 
 ### Search
@@ -47,13 +47,13 @@ gh-cached issue list --milestone 5
 Case-insensitive substring match against title and body:
 
 ```bash
-gh-cached issue list --search "memory leak"
+ghx issue list --search "memory leak"
 ```
 
 ### Limit results
 
 ```bash
-gh-cached issue list --limit 10
+ghx issue list --limit 10
 ```
 
 When the total exceeds the limit, a summary is printed to stderr:
@@ -65,7 +65,7 @@ Showing 10 of 42 issues
 ### JSON output
 
 ```bash
-gh-cached issue list --json
+ghx issue list --json
 ```
 
 Outputs a pretty-printed JSON array of issue objects.
@@ -75,19 +75,19 @@ Outputs a pretty-printed JSON array of issue objects.
 By default, titles are truncated to 60 characters. Use `--no-truncate` to show full titles:
 
 ```bash
-gh-cached issue list --no-truncate
+ghx issue list --no-truncate
 ```
 
 ## View a single issue
 
 ```bash
-gh-cached issue view 42
+ghx issue view 42
 ```
 
 ### Show comments
 
 ```bash
-gh-cached issue view 42 --comments
+ghx issue view 42 --comments
 ```
 
 ### Force refresh
@@ -95,13 +95,13 @@ gh-cached issue view 42 --comments
 Bypass the cache and fetch the latest data from GitHub, updating the cache:
 
 ```bash
-gh-cached issue view 42 --refresh
+ghx issue view 42 --refresh
 ```
 
 ### JSON output
 
 ```bash
-gh-cached issue view 42 --json
+ghx issue view 42 --json
 ```
 
 ## Example output

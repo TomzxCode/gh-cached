@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tomzxcode/gh-cached/internal/github"
+	"github.com/tomzxcode/ghx/internal/github"
 )
 
 func newTempStore(t *testing.T) *Store {

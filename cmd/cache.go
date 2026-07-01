@@ -16,7 +16,7 @@ var cacheCmd = &cobra.Command{
 	Use:   "cache",
 	Short: "Fetch and cache issues and PRs (including comments)",
 	Long: `Fetches all issues and pull requests (with comments) from GitHub and writes them
-to ~/.cache/gh-cached/<host>/<owner>/<repo>. Subsequent list/view commands will
+to ~/.cache/ghx/cache/<host>/<owner>/<repo>. Subsequent list/view commands will
 serve results from this cache until it expires.`,
 	RunE: runCache,
 }

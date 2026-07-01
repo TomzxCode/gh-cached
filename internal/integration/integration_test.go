@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tomzxcode/gh-cached/internal/cache"
-	"github.com/tomzxcode/gh-cached/internal/github"
-	"github.com/tomzxcode/gh-cached/internal/mockserver"
+	"github.com/tomzxcode/ghx/internal/cache"
+	"github.com/tomzxcode/ghx/internal/github"
+	"github.com/tomzxcode/ghx/internal/mockserver"
 )
 
 func sampleScenario() *mockserver.Scenario {

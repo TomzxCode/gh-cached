@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/mockserver"
+	"github.com/tomzxcode/ghx/internal/mockserver"
 )
 
 var (
@@ -93,9 +93,9 @@ func runMockServe(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stderr, "Mock server ready.\n\n")
 	fmt.Fprintf(os.Stderr, "  URL: %s\n\n", srv.URL())
 	fmt.Fprintf(os.Stderr, "Usage:\n")
-	fmt.Fprintf(os.Stderr, "  gh-cached --api-url %s --cache-dir /tmp/mock-cache --repo %s cache\n",
+	fmt.Fprintf(os.Stderr, "  ghx --api-url %s --cache-dir /tmp/mock-cache --repo %s cache\n",
 		srv.URL(), cfg.Repos[0])
-	fmt.Fprintf(os.Stderr, "  gh-cached --api-url %s --cache-dir /tmp/mock-cache --repo %s issue list --state all\n",
+	fmt.Fprintf(os.Stderr, "  ghx --api-url %s --cache-dir /tmp/mock-cache --repo %s issue list --state all\n",
 		srv.URL(), cfg.Repos[0])
 	fmt.Fprintf(os.Stderr, "\nListening (Ctrl+C to stop)...\n")
 

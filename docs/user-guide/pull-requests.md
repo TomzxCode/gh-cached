@@ -3,7 +3,7 @@
 ## List pull requests
 
 ```bash
-gh-cached pr list
+ghx pr list
 ```
 
 When the cache is fresh, results are served from disk. Otherwise the GitHub API is used.
@@ -11,30 +11,30 @@ When the cache is fresh, results are served from disk. Otherwise the GitHub API 
 ### Filter by state
 
 ```bash
-gh-cached pr list                     # open (default)
-gh-cached pr list --state closed
-gh-cached pr list --state merged
-gh-cached pr list --state all
+ghx pr list                     # open (default)
+ghx pr list --state closed
+ghx pr list --state merged
+ghx pr list --state all
 ```
 
 ### Filter by author or assignee
 
 ```bash
-gh-cached pr list --author alice
-gh-cached pr list --assignee bob
+ghx pr list --author alice
+ghx pr list --assignee bob
 ```
 
 ### Filter by branch
 
 ```bash
-gh-cached pr list --base main
-gh-cached pr list --head feat/dark-mode
+ghx pr list --base main
+ghx pr list --head feat/dark-mode
 ```
 
 ### Filter by draft status
 
 ```bash
-gh-cached pr list --draft
+ghx pr list --draft
 ```
 
 ### Filter by label
@@ -42,8 +42,8 @@ gh-cached pr list --draft
 Labels use AND logic. Repeat the flag to require all specified labels:
 
 ```bash
-gh-cached pr list --label enhancement
-gh-cached pr list --label enhancement --label reviewed
+ghx pr list --label enhancement
+ghx pr list --label enhancement --label reviewed
 ```
 
 ### Search
@@ -51,13 +51,13 @@ gh-cached pr list --label enhancement --label reviewed
 Case-insensitive substring match against title and body:
 
 ```bash
-gh-cached pr list --search "fix crash"
+ghx pr list --search "fix crash"
 ```
 
 ### Limit results
 
 ```bash
-gh-cached pr list --limit 10
+ghx pr list --limit 10
 ```
 
 When the total exceeds the limit, a summary is printed to stderr:
@@ -69,7 +69,7 @@ Showing 10 of 30 pull requests
 ### JSON output
 
 ```bash
-gh-cached pr list --json
+ghx pr list --json
 ```
 
 Outputs a pretty-printed JSON array of pull request objects.
@@ -79,19 +79,19 @@ Outputs a pretty-printed JSON array of pull request objects.
 By default, titles are truncated to 55 characters. Use `--no-truncate` to show full titles:
 
 ```bash
-gh-cached pr list --no-truncate
+ghx pr list --no-truncate
 ```
 
 ## View a single pull request
 
 ```bash
-gh-cached pr view 10
+ghx pr view 10
 ```
 
 ### Show comments
 
 ```bash
-gh-cached pr view 10 --comments
+ghx pr view 10 --comments
 ```
 
 ### Force refresh
@@ -99,13 +99,13 @@ gh-cached pr view 10 --comments
 Bypass the cache and fetch the latest data from GitHub, updating the cache:
 
 ```bash
-gh-cached pr view 10 --refresh
+ghx pr view 10 --refresh
 ```
 
 ### JSON output
 
 ```bash
-gh-cached pr view 10 --json
+ghx pr view 10 --json
 ```
 
 ## Example output

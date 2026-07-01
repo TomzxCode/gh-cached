@@ -1,16 +1,16 @@
-# gh-cached
+# ghx
 
-A GitHub CLI that calls the GitHub GraphQL API to retrieve issues, pull requests, and comments, caching all results to disk to minimise API calls.
+An extended GitHub CLI. It caches issues, pull requests, and comments to disk to minimise API calls, and provides PR/issue comment operations beyond the standard `gh` CLI: inline review comments, line-range comments, thread replies, pending reviews, and local comment stashes.
 
-Cache lives at `~/.cache/gh-cached/<host>/<owner>/<repo>`.
+Issue/PR cache lives at `~/.cache/ghx/cache/<host>/<owner>/<repo>`. Review-comment stashes live at `~/.cache/ghx/stash/<owner>/<repo>/<pr>`.
 
 ## Installation
 
 ```bash
-go install github.com/tomzxcode/gh-cached@main
+go install github.com/tomzxcode/ghx@main
 ```
 
-Or download a pre-built binary from the [releases page](https://github.com/TomzxCode/gh-cached/releases/tag/latest).
+Or download a pre-built binary from the [releases page](https://github.com/TomzxCode/ghx/releases/tag/latest).
 
 ## Authentication
 
@@ -22,7 +22,7 @@ export GH_TOKEN=ghp_...
 
 `GITHUB_TOKEN` is also supported and checked as a fallback after `GH_TOKEN`.
 
-Alternatively, if you have the [GitHub CLI](https://cli.github.com) installed and authenticated, `gh-cached` will use it as a fallback (`gh auth token`).
+Alternatively, if you have the [GitHub CLI](https://cli.github.com) installed and authenticated, `ghx` will use it as a fallback (`gh auth token`).
 
 ## Usage
 
@@ -33,11 +33,11 @@ All commands accept `--repo [HOST/]OWNER/REPO`. When omitted, the repository is 
 Pre-populate the local cache with all issues and PRs (including comments):
 
 ```bash
-gh-cached cache
-gh-cached cache --repo cli/cli
-gh-cached cache --cache-duration 120   # treat cache as fresh for 2 hours
-gh-cached cache --cache-duration 0     # always re-fetch (delta)
-gh-cached cache --force                  # force full re-fetch
+ghx cache
+ghx cache --repo cli/cli
+ghx cache --cache-duration 120   # treat cache as fresh for 2 hours
+ghx cache --cache-duration 0     # always re-fetch (delta)
+ghx cache --force                  # force full re-fetch
 ```
 
 Example output (first-time run):
@@ -66,25 +66,25 @@ List and view commands serve from the cache when it is fresh, and fall back to t
 
 ```bash
 # List open issues (default)
-gh-cached issue list
+ghx issue list
 
 # Filtering
-gh-cached issue list --state all
-gh-cached issue list --state closed
-gh-cached issue list --author alice
-gh-cached issue list --assignee bob
-gh-cached issue list --label bug
-gh-cached issue list --label bug --label p1   # AND logic
-gh-cached issue list --milestone v2.0
-gh-cached issue list --mention carol
-gh-cached issue list --app dependabot
-gh-cached issue list --search "memory leak"
-gh-cached issue list --limit 10
+ghx issue list --state all
+ghx issue list --state closed
+ghx issue list --author alice
+ghx issue list --assignee bob
+ghx issue list --label bug
+ghx issue list --label bug --label p1   # AND logic
+ghx issue list --milestone v2.0
+ghx issue list --mention carol
+ghx issue list --app dependabot
+ghx issue list --search "memory leak"
+ghx issue list --limit 10
 
 # View a single issue
-gh-cached issue view 42
-gh-cached issue view 42 --comments
-gh-cached issue view 42 --refresh   # force fetch from GitHub and update cache
+ghx issue view 42
+ghx issue view 42 --comments
+ghx issue view 42 --refresh   # force fetch from GitHub and update cache
 ```
 
 Example output (`issue list`):
@@ -122,25 +122,25 @@ Thanks, I'll look into it.
 
 ```bash
 # List open PRs (default)
-gh-cached pr list
+ghx pr list
 
 # Filtering
-gh-cached pr list --state all
-gh-cached pr list --state merged
-gh-cached pr list --author alice
-gh-cached pr list --assignee bob
-gh-cached pr list --label enhancement
-gh-cached pr list --base main
-gh-cached pr list --head feat/dark-mode
-gh-cached pr list --draft
-gh-cached pr list --app dependabot
-gh-cached pr list --search "fix crash"
-gh-cached pr list --limit 10
+ghx pr list --state all
+ghx pr list --state merged
+ghx pr list --author alice
+ghx pr list --assignee bob
+ghx pr list --label enhancement
+ghx pr list --base main
+ghx pr list --head feat/dark-mode
+ghx pr list --draft
+ghx pr list --app dependabot
+ghx pr list --search "fix crash"
+ghx pr list --limit 10
 
 # View a single PR
-gh-cached pr view 10
-gh-cached pr view 10 --comments
-gh-cached pr view 10 --refresh      # force fetch from GitHub and update cache
+ghx pr view 10
+ghx pr view 10 --comments
+ghx pr view 10 --refresh      # force fetch from GitHub and update cache
 ```
 
 Example output (`pr list`):
@@ -179,7 +179,7 @@ Thanks for the review.
 List locally cached repositories:
 
 ```bash
-gh-cached repo list
+ghx repo list
 ```
 
 Example output:
@@ -188,6 +188,83 @@ Example output:
 REPO                      ISSUES  PRS  CACHED AGE  STATUS
 octocat/hello-world       42      15   2h30m       fresh
 alice/another-repo        10      3    1d          stale
+```
+
+### PR comments (inline, replies, pending, stash)
+
+```bash
+# Top-level comment
+ghx pr comment 10 --body "Looks good"
+
+# Inline comment on a line or range
+ghx pr comment 10 --file src/main.go --line 42 --body "Nit"
+ghx pr comment 10 --file src/main.go --line 42-45 --body "Consider extracting"
+
+# File-level comment (no --line)
+ghx pr comment 10 --file src/main.go --body "Overall looks clean"
+
+# Reply to an existing review thread
+ghx pr comment 10 --reply-thread <thread-id> --body "Agreed"
+
+# Add to a pending review instead of posting immediately
+ghx pr comment 10 --file src/main.go --line 42 --body "Nit" --pending
+
+# Save to a local stash entry instead of calling the API
+ghx pr comment 10 --file src/main.go --line 42 --body "Nit" --stash
+
+# Body from stdin or a file
+ghx pr comment 10 --body-file -
+ghx pr comment 10 --body-file comment.txt
+```
+
+### Edit / delete comments
+
+```bash
+ghx pr comment edit   <comment-id> --body "Updated text"
+ghx pr comment delete <comment-id>
+ghx issue comment edit   <comment-id> --body "Updated text"
+ghx issue comment delete <comment-id>
+```
+
+Use `ghx pr threads <number> --ids` or `ghx issue view <number> --ids` to find comment IDs.
+
+### Review threads
+
+```bash
+ghx pr threads 10                       # open threads, with comments
+ghx pr threads 10 --thread <thread-id>  # show one thread
+ghx pr threads 10 --ids                 # include comment IDs
+ghx pr threads 10 --state all
+ghx pr threads 10 --state resolved
+```
+
+### Pending reviews
+
+```bash
+ghx pr review create  10
+ghx pr review list    10
+ghx pr review submit  10 --event COMMENT
+ghx pr review submit  10 --event APPROVE --body "LGTM"
+ghx pr review submit  10 --event REQUEST_CHANGES --body "See comments"
+ghx pr review discard <review-id>
+```
+
+### Review-comment stashes
+
+```bash
+ghx pr review stash push 10 -m "nit comments"   # save pending -> stash@{0}
+ghx pr review stash list 10                     # list stash entries
+ghx pr review stash pop  10                     # restore stash@{0} into a pending review
+ghx pr review stash pop  10 --stash 1           # restore stash@{1}
+ghx pr review stash drop 10                     # discard stash@{0}
+```
+
+### Issue comments
+
+```bash
+ghx issue comment 42 --body "Fixed in #50"
+ghx issue comment 42 --body-file -
+ghx issue view 42 --ids                 # show comment IDs
 ```
 
 ## How caching works
@@ -204,7 +281,9 @@ alice/another-repo        10      3    1d          stale
 
 | Flag | Description |
 |---|---|
-| `--repo [HOST/]OWNER/REPO` | Target repository (default: detected from `git remote origin`) |
+| `-R, --repo [HOST/]OWNER/REPO` | Target repository (default: detected from `git remote origin`) |
+| `--api-url string` | Override the GitHub GraphQL API endpoint URL (for testing) |
+| `--cache-dir string` | Override the cache directory path |
 
 ### `cache`
 
@@ -234,6 +313,7 @@ alice/another-repo        10      3    1d          stale
 | Flag | Description |
 |---|---|
 | `-c, --comments` | Show comments |
+| `--ids` | Show comment IDs (useful for editing/deleting) |
 | `--json` | Output as JSON |
 | `--refresh` | Force fetch from GitHub and update cache |
 

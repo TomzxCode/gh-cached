@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/tomzxcode/gh-cached/internal/cache"
-	"github.com/tomzxcode/gh-cached/internal/gitremote"
-	"github.com/tomzxcode/gh-cached/internal/github"
-	"github.com/tomzxcode/gh-cached/internal/version"
+	"github.com/tomzxcode/ghx/internal/cache"
+	"github.com/tomzxcode/ghx/internal/gitremote"
+	"github.com/tomzxcode/ghx/internal/github"
+	"github.com/tomzxcode/ghx/internal/version"
 )
 
 var (
@@ -18,13 +18,15 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "gh-cached",
-	Short:         "GitHub CLI with local caching",
+	Use:           "ghx",
+	Short:         "Extended GitHub CLI with local caching",
 	Version:       version.Get(),
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	Long: `gh-cached is a GitHub CLI that caches issues, pull requests, and their comments
-locally to minimise API calls. The cache lives at ~/.cache/gh-cached/<host>/<owner>/<repo>.`,
+	Long: `ghx is an extended GitHub CLI. It caches issues, pull requests, and their
+comments locally to minimise API calls (cache at ~/.cache/ghx/cache/<host>/<owner>/<repo>),
+and provides PR/issue comment operations beyond the standard gh CLI: inline review
+comments, line-range comments, thread replies, pending reviews, and local stashes.`,
 }
 
 // Execute is the entry point called from main.
@@ -36,7 +38,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&repoFlag, "repo", "", "Repository in [HOST/]OWNER/REPO format")
+	rootCmd.PersistentFlags().StringVarP(&repoFlag, "repo", "R", "", "Repository in [HOST/]OWNER/REPO format")
 	rootCmd.PersistentFlags().StringVar(&apiURLFlag, "api-url", "", "Override the GitHub GraphQL API endpoint URL (for testing)")
 	rootCmd.PersistentFlags().StringVar(&cacheDir, "cache-dir", "", "Override the cache directory path")
 
@@ -53,6 +55,16 @@ func getRepo() (*gitremote.Repo, error) {
 		return gitremote.ParseRepo(repoFlag)
 	}
 	return gitremote.DetectRepo()
+}
+
+// resolveOwnerName resolves the target repository and returns its owner and
+// name, for use by the gh comment/review operations (which target github.com).
+func resolveOwnerName() (owner, name string, err error) {
+	repo, err := getRepo()
+	if err != nil {
+		return "", "", err
+	}
+	return repo.Owner, repo.Name, nil
 }
 
 // newClient creates a GitHub client, using --api-url if provided.

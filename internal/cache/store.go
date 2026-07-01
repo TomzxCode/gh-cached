@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tomzxcode/gh-cached/internal/github"
+	"github.com/tomzxcode/ghx/internal/github"
 )
 
 // CacheInfo records when the full cache was last populated.
@@ -17,7 +17,7 @@ type CacheInfo struct {
 	Duration int       `json:"duration"` // minutes
 }
 
-// Store manages the on-disk cache at ~/.cache/gh-cached.
+// Store manages the on-disk cache at ~/.cache/ghx/cache.
 type Store struct {
 	baseDir string
 }
@@ -28,7 +28,7 @@ func NewStore() *Store {
 	if err != nil {
 		home = os.TempDir()
 	}
-	return &Store{baseDir: filepath.Join(home, ".cache", "gh-cached")}
+	return &Store{baseDir: filepath.Join(home, ".cache", "ghx", "cache")}
 }
 
 // NewStoreWithPath creates a Store using the given base directory.

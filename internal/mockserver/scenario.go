@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tomzxcode/gh-cached/internal/github"
+	"github.com/tomzxcode/ghx/internal/github"
 )
 
 type ScenarioBuilder struct {

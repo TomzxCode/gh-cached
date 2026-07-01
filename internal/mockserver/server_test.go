@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tomzxcode/gh-cached/internal/github"
+	"github.com/tomzxcode/ghx/internal/github"
 )
 
 func postGQL(t *testing.T, url string, query string, variables map[string]interface{}) gqlResponse {

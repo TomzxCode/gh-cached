@@ -103,7 +103,7 @@ func (c *Client) Query(query string, variables map[string]interface{}, result in
 	}
 	req.Header.Set("Authorization", "bearer "+c.token)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "gh-cached/1.0")
+	req.Header.Set("User-Agent", "ghx/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
